@@ -10,13 +10,12 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="3분할 차트">
 <meta name="application-name" content="3분할 차트">
-<meta name="description" content="원하는 3종목 3분할 캔들 차트·1화면 확대·가격 알림">
+<meta name="description" content="원하는 1~4종목 분할 캔들 차트·RSI·매물대·1화면 확대·십자선 원터치 돌파 알림">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f1720'/%3E%3Crect x='13' y='20' width='9' height='26' rx='2' fill='%2326a69a'/%3E%3Crect x='15.5' y='14' width='4' height='38' rx='2' fill='%2326a69a'/%3E%3Crect x='28' y='26' width='9' height='22' rx='2' fill='%23ef5350'/%3E%3Crect x='30.5' y='18' width='4' height='36' rx='2' fill='%23ef5350'/%3E%3Crect x='43' y='16' width='9' height='28' rx='2' fill='%2326a69a'/%3E%3Crect x='45.5' y='10' width='4' height='40' rx='2' fill='%2326a69a'/%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f1720'/%3E%3Crect x='15.5' y='14' width='4' height='38' rx='2' fill='%2326a69a'/%3E%3Crect x='13' y='20' width='9' height='26' rx='2' fill='%2326a69a'/%3E%3Crect x='30.5' y='18' width='4' height='36' rx='2' fill='%23ef5350'/%3E%3Crect x='28' y='26' width='9' height='22' rx='2' fill='%23ef5350'/%3E%3Crect x='45.5' y='10' width='4' height='40' rx='2' fill='%2326a69a'/%3E%3Crect x='43' y='16' width='9' height='28' rx='2' fill='%2326a69a'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(function () {}); }</script>
-<title>BTC · NASDAQ · GOLD — 3분할 차트</title>
+<script>if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(function () {}); }); }</script>
+<title>BTC · NASDAQ · GOLD · ETH — 1~4분할 차트</title>
 <style>
   :root{
     --bg:#f4f6f8; --bar:#ffffff; --panel:#ffffff; --sep:#dfe3e8; --card:#ffffff;
@@ -37,129 +36,132 @@
   }
   body{position:fixed;inset:0}
   #app{
-    position:fixed;inset:0;height:100vh;height:100dvh;display:flex;flex-direction:column;
-    background:var(--bg);
+    position:fixed;inset:0;height:100vh;height:100dvh;display:flex;flex-direction:column;background:var(--bg);
     padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 
-  /* ── 상단 슬림 바: 타임프레임 스크롤 + (확대 시) 1·2·3·3분할 칩 + 우측 고정 버튼 ── */
-  #bar{
-    flex:0 0 auto;height:30px;display:flex;align-items:center;
-    background:var(--bar);border-bottom:1px solid var(--sep);min-width:0;
-  }
-  #tf{
-    flex:1 1 auto;min-width:0;height:100%;display:flex;align-items:center;
-    overflow-x:auto;overflow-y:hidden;white-space:nowrap;
-    scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
-  }
+  /* ── 상단 슬림 바 ───────────────────────────────── */
+  #bar{flex:0 0 auto;height:30px;display:flex;align-items:center;background:var(--bar);border-bottom:1px solid var(--sep);min-width:0}
+  #lay{flex:0 0 auto;display:flex;align-items:center;gap:1px;padding:0 2px;border-left:1px solid var(--sep);border-right:1px solid var(--sep)}
+  #lay button{width:18px;height:19px;padding:0;border-radius:5px;border:1px solid var(--chip-line);background:var(--chip);
+    color:var(--txt);font-family:inherit;font-size:10.5px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+  #lay button.on{background:var(--sel);color:var(--sel-tx);border-color:#2b6cf0}
+  #tf{flex:1 1 auto;min-width:0;height:100%;display:flex;align-items:center;overflow-x:auto;overflow-y:hidden;white-space:nowrap;
+    scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
   #tf::-webkit-scrollbar{display:none;width:0;height:0}
   #tf .set{flex:0 0 auto;display:flex;align-items:center;gap:0;padding:0 1px}
-  #tf button{
-    flex:0 0 auto;border:0;background:transparent;color:var(--dim);
-    font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.1px;
-    line-height:1;padding:6px 6px;border-radius:5px;
-  }
+  #tf button{flex:0 0 auto;border:0;background:transparent;color:var(--dim);font-family:inherit;font-size:11px;font-weight:600;
+    letter-spacing:.1px;line-height:1;padding:6px 6px;border-radius:5px}
   #tf button.on{background:var(--sel);color:var(--sel-tx)}
   #tools{flex:0 0 auto;display:flex;align-items:center;gap:3px;padding:0 4px 0 2px}
-  #tools button{
-    display:inline-flex;align-items:center;justify-content:center;gap:3px;
-    height:22px;padding:0 6px;border-radius:6px;border:1px solid var(--chip-line);
-    background:var(--chip);color:var(--txt);font-family:inherit;font-size:10.5px;font-weight:600;
-    line-height:1;white-space:nowrap;
-  }
+  #tools button{display:inline-flex;align-items:center;justify-content:center;gap:3px;height:22px;padding:0 6px;border-radius:6px;
+    border:1px solid var(--chip-line);background:var(--chip);color:var(--txt);font-family:inherit;font-size:10.5px;font-weight:600;
+    line-height:1;white-space:nowrap}
   #tools button.icon{width:26px;padding:0}
   #tools button:active{background:var(--sel)}
   #alertBtn.hot{border-color:#f0a800;color:#b07800;background:#fff6e0}
   body.dark #alertBtn.hot{color:#f5c65b;background:#2a2312;border-color:#6b551f}
   #alertBtn .n{font-variant-numeric:tabular-nums}
-  #symBtn{gap:3px}
-  #symBtn .ic{font-size:9px;opacity:.65}
   #toolsBtn.on{border-color:#2b6cf0;color:#1b5fd0;background:var(--sel)}
   body.dark #toolsBtn.on{color:#dfe8ff;background:#25334a;border-color:#3d5680}
-  @media (max-width:390px){ #toolsBtn .t{display:none} #toolsBtn{padding:0 5px} }
-  /* 1화면 확대 중에는 상단 바 자리를 확보하려고 종목 버튼을 숨긴다(좌상단 알약으로 대신) */
-  body.zoomed #symBtn{display:none}
+  @media (max-width:400px){ #toolsBtn .t{display:none} #toolsBtn{padding:0 5px} #symBtn .t{display:none} #symBtn{padding:0 5px} }
 
-  /* 1화면 확대 중에만 나타나는 1 · 2 · 3 · 3분할 칩 */
+  /* 1화면 확대 중 칩 */
+  body.zoomed #symBtn{display:none}
   #zoomChips{display:none;flex:0 0 auto;align-items:center;gap:2px;padding:0 2px}
   #zoomChips.show{display:flex}
-  #zoomChips button{
-    height:20px;min-width:20px;padding:0 5px;border-radius:5px;border:1px solid var(--chip-line);
-    background:var(--chip);color:var(--txt);font-family:inherit;font-size:10.5px;font-weight:700;
-    line-height:1;letter-spacing:.1px;
-  }
+  #zoomChips button{height:20px;min-width:20px;padding:0 5px;border-radius:5px;border:1px solid var(--chip-line);
+    background:var(--chip);color:var(--txt);font-family:inherit;font-size:10.5px;font-weight:700;line-height:1;letter-spacing:.1px}
   #zoomChips button.on{background:var(--sel);color:var(--sel-tx);border-color:transparent}
   #zoomChips button.back{background:#fff2cc;border-color:#e8c15a;color:#7a5500;font-size:10px;padding:0 6px}
   body.dark #zoomChips button.back{background:#33290f;border-color:#6b551f;color:#f5c65b}
 
-  /* ── 3분할 ───────────────────────────────────────── */
-  #grid{
-    position:relative;
-    flex:1 1 auto;min-height:0;display:grid;background:var(--sep);gap:1px;
-    grid-template-columns:100%;grid-template-rows:repeat(3,minmax(0,1fr));
-  }
+  /* ── 작도 도구 막대 ─────────────────────────────── */
+  #toolbar{display:none;flex:0 0 auto;height:28px;align-items:center;gap:4px;padding:0 5px;background:var(--bar);
+    border-bottom:1px solid var(--sep);overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+  #toolbar::-webkit-scrollbar{display:none}
+  #toolbar.show{display:flex}
+  #toolbar button{flex:0 0 auto;height:21px;padding:0 7px;border-radius:6px;border:1px solid var(--chip-line);
+    background:var(--chip);color:var(--txt);font-family:inherit;font-size:10.5px;font-weight:600;line-height:1;white-space:nowrap}
+  #toolbar button.on{background:var(--sel);color:var(--sel-tx);border-color:#2b6cf0}
+  #toolbar .sep{flex:0 0 auto;width:1px;height:14px;background:var(--line);margin:0 1px}
+  #toolbar .hint{flex:0 0 auto;font-size:9.5px;color:var(--dim);padding-left:3px}
+
+  /* ── 3분할 ──────────────────────────────────────── */
+  #grid{position:relative;flex:1 1 auto;min-height:0;display:grid;background:var(--sep);gap:1px}
+  #grid.n1{grid-template-columns:100%;grid-template-rows:100%}
+  #grid.n2{grid-template-columns:100%;grid-template-rows:repeat(2,minmax(0,1fr))}
+  #grid.n3{grid-template-columns:100%;grid-template-rows:repeat(3,minmax(0,1fr))}
+  #grid.n4{grid-template-columns:100%;grid-template-rows:repeat(4,minmax(0,1fr))}
   @media (orientation:landscape){
-    #grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:100%}
+    #grid.n1{grid-template-columns:100%;grid-template-rows:100%}
+    #grid.n2{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:100%}
+    #grid.n3{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:100%}
+    #grid.n4{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
   }
   .panel{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--panel);overflow:hidden}
-
-  /* 1화면 확대: 나머지 패널은 감추고 선택한 패널만 격자 전체를 덮는다 */
+  .panel.off{display:none}
   #grid.zoom .panel:not(.z){visibility:hidden}
-  #grid.zoom .panel.z{position:absolute;inset:0;z-index:7}
-
-  /* 좌상단 종목 알약 — 탭하면 종목 모달 */
-  .tag{
-    position:absolute;left:2px;top:2px;z-index:6;cursor:pointer;
-    font-family:inherit;font-size:8.5px;line-height:1;font-weight:700;letter-spacing:.4px;
-    color:rgba(20,26,33,.5);background:rgba(255,255,255,.74);
-    border:1px solid rgba(20,26,33,.1);border-radius:4px;padding:3px 4px;
-  }
-  .tag:active{background:var(--sel);color:var(--sel-tx)}
-  body.dark .tag{color:rgba(215,221,231,.6);background:rgba(11,14,17,.58);border-color:rgba(215,221,231,.14)}
-
-  /* 패널 위쪽 가장자리 18px — 두 번 탭(더블 클릭)하면 1화면 ↔ 3분할 */
-  .dz{position:absolute;left:0;right:0;top:0;height:18px;z-index:5;background:transparent;touch-action:manipulation}
-  .dz i{position:absolute;right:3px;top:3px;font-style:normal;font-size:9px;line-height:1;color:var(--dim);opacity:.42;pointer-events:none}
-  #grid.zoom .dz{height:22px}
+  #grid.zoom .panel.z{position:absolute;inset:0;z-index:7;display:flex;visibility:visible}
 
   .chart{position:relative;flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
   .wrap{position:relative;flex:1 1 auto;min-height:0;overflow:hidden}
-  /* 위젯은 iframe 높이를 100%-32px(저작권 줄)로 잡으므로, 컨테이너를 32px 더 길게 두어
-     iframe이 패널 높이를 그대로 쓰게 한다. 위젯 자체 저작권 줄은 잘려 보이지 않고,
-     아래 cpr 줄에서 같은 출처 표기를 보여준다. */
-  .tradingview-widget-container{position:absolute;left:0;right:0;top:0;height:calc(100% + 32px)}
-  .cpr{
-    flex:0 0 11px;display:flex;align-items:center;justify-content:flex-end;
-    padding-right:3px;font-size:7.5px;line-height:1;color:var(--dim);opacity:.72;
-    white-space:nowrap;overflow:hidden;letter-spacing:.1px;
-  }
-  .cpr a{color:inherit;text-decoration:none}
+  .pchart{position:relative;width:100%}
+  .rsi{position:relative;width:100%;overflow:hidden}
+  .pcv,.rcv{position:absolute;left:0;top:0;z-index:3;pointer-events:none;display:block}
+  .hit{position:absolute;left:0;top:0;width:100%;z-index:5;pointer-events:none;touch-action:none}
+  body.toolon .hit{pointer-events:auto;cursor:crosshair}
 
-  .msg{
-    position:absolute;inset:0;display:none;place-items:center;text-align:center;
-    background:var(--panel);color:var(--dim);font-size:11px;line-height:1.7;padding:10px;z-index:4;
-  }
+  .cpr{flex:0 0 11px;display:flex;align-items:center;justify-content:flex-end;gap:4px;padding-right:4px;
+    font-size:7.5px;line-height:1;color:var(--dim);opacity:.72;white-space:nowrap;overflow:hidden;letter-spacing:.1px}
+  .cpr .st{color:var(--acc)}
+  .cpr .st.err{color:var(--down)}
+
+  /* 종목 알약 (탭하면 종목 변경) */
+  .tag{position:absolute;left:3px;top:3px;z-index:7;cursor:pointer;display:flex;align-items:baseline;gap:4px;
+    font-family:inherit;font-size:9px;line-height:1;font-weight:800;letter-spacing:.2px;
+    color:var(--txt);background:rgba(255,255,255,.78);border:1px solid rgba(20,26,33,.1);border-radius:5px;padding:3px 5px;
+    backdrop-filter:blur(2px)}
+  body.dark .tag{background:rgba(11,14,17,.72);border-color:rgba(215,221,231,.14)}
+  .tag:active{background:var(--sel);color:var(--sel-tx)}
+  .tag span{font-size:10px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--dim)}
+  .tag span.up{color:var(--up)} .tag span.down{color:var(--down)}
+
+  /* 십자선 가격축 + 버튼 */
+  .plus{position:absolute;z-index:8;width:25px;height:25px;display:none;align-items:center;justify-content:center;
+    border-radius:50%;border:1px solid #2b6cf0;background:#2b6cf0;color:#fff;
+    font-family:inherit;font-size:18px;font-weight:600;line-height:1;padding:0 0 2px;
+    box-shadow:0 3px 10px rgba(16,24,40,.28);touch-action:manipulation}
+  body.dark .plus{background:#3b7bf5;border-color:#5f95ff;box-shadow:0 3px 10px rgba(0,0,0,.6)}
+  .plus.show{display:flex}
+  .plus:active{transform:scale(.94)}
+
+  /* 원터치 알림 팝업 */
+  .qpop{position:absolute;z-index:9;width:190px;display:none;background:var(--card);border:1px solid var(--line);
+    border-radius:11px;box-shadow:var(--shadow);padding:8px 9px 9px}
+  .qpop.show{display:block}
+  .qpop .qx{position:absolute;right:4px;top:4px;width:20px;height:20px;border:0;border-radius:6px;background:transparent;
+    color:var(--dim);font-family:inherit;font-size:11px;line-height:1;padding:0}
+  .qpop .qpx{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.1px}
+  .qpop .qdir{font-size:10px;color:var(--dim);margin:2px 0 7px;line-height:1.35}
+  .qpop .qdir b{color:var(--txt)}
+  .qpop .qadd{width:100%;height:30px;border:0;border-radius:8px;background:#2b6cf0;color:#fff;font-family:inherit;
+    font-size:11.5px;font-weight:800;line-height:1}
+  .qpop .qadd:active{background:#1b5fd0}
+  .qpop .qnote{font-size:8.5px;color:var(--dim);margin-top:5px;line-height:1.35}
+
+  .msg{position:absolute;inset:0;z-index:10;display:none;place-items:center;text-align:center;
+    background:var(--panel);color:var(--dim);font-size:11px;line-height:1.7;padding:12px}
   .msg.show{display:grid}
   .msg p{margin:0 0 8px}
-  .msg span{font-size:10px;color:var(--dim);opacity:.8}
-  .msg button{
-    font-family:inherit;font-size:11px;font-weight:600;color:#fff;background:#2b6cf0;
-    border:0;border-radius:6px;padding:6px 11px;
-  }
+  .msg span{font-size:10px;color:var(--dim);opacity:.85}
+  .msg button{font-family:inherit;font-size:11px;font-weight:600;color:#fff;background:#2b6cf0;border:0;border-radius:6px;padding:6px 11px}
 
-  /* ── 알림 배너 ─────────────────────────────────── */
-  #banner{
-    position:fixed;left:0;right:0;z-index:60;display:none;
-    top:calc(env(safe-area-inset-top) + 30px);
-    padding:6px 8px;border-radius:0 0 10px 10px;
-    background:#fff3d6;color:#6b4b00;border-bottom:1px solid #f0c860;
-    box-shadow:0 8px 22px rgba(16,24,40,.18);
-    /* 배너가 떠 있어도 그 아래 차트의 두 번 탭 존은 계속 쓸 수 있게 한다 */
-    pointer-events:none;
-  }
+  /* ── 배너 ─────────────────────────────────────── */
+  #banner{position:fixed;left:0;right:0;z-index:60;display:none;top:calc(env(safe-area-inset-top) + 30px);
+    padding:6px 8px;border-radius:0 0 10px 10px;background:#fff3d6;color:#6b4b00;border-bottom:1px solid #f0c860;
+    box-shadow:0 8px 22px rgba(16,24,40,.18);pointer-events:none}
   body.dark #banner{background:#2a2312;color:#f3d48c;border-bottom-color:#6b551f}
-  body.dark #banner .btxt em{color:#ffd267}
-  body.dark #banner button{background:rgba(255,255,255,.08);color:#f3d48c}
   #banner.show{display:block}
   #banner .brow{display:flex;align-items:flex-start;gap:6px}
   #banner .btxt{flex:1 1 auto;font-size:11.5px;line-height:1.45;font-weight:600}
@@ -168,108 +170,73 @@
   #banner .btxt b{color:#7a4d00}
   body.dark #banner .btxt b{color:#ffd267}
   #banner .btxt div+div{margin-top:2px}
-  #banner button{
-    flex:0 0 auto;width:22px;height:22px;border:0;border-radius:6px;
-    background:rgba(0,0,0,.07);color:#6b4b00;font-family:inherit;font-size:11px;line-height:1;
-  }
+  #banner button{flex:0 0 auto;width:22px;height:22px;border:0;border-radius:6px;background:rgba(0,0,0,.07);color:#6b4b00;
+    font-family:inherit;font-size:11px;line-height:1}
 
-  /* ── 모달 공통(가격 알림 · 종목) ───────────────── */
-  #modal,#symModal{
-    position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;
-    background:var(--overlay);padding:12px;
-  }
+  /* 토스트 */
+  #toast{position:fixed;left:50%;transform:translateX(-50%);z-index:70;bottom:calc(env(safe-area-inset-bottom) + 14px);
+    background:rgba(20,26,33,.92);color:#fff;font-size:11.5px;font-weight:600;padding:7px 12px;border-radius:20px;
+    display:none;max-width:86vw;text-align:center;line-height:1.35}
+  body.dark #toast{background:rgba(235,240,248,.94);color:#10151c}
+  #toast.show{display:block}
+
+  /* ── 모달 공통 ─────────────────────────────────── */
+  #modal,#symModal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:var(--overlay);padding:12px}
   #modal.show,#symModal.show{display:flex}
-  .dlg{
-    width:100%;max-width:430px;max-height:86vh;display:flex;flex-direction:column;
-    background:var(--card);border:1px solid var(--line);border-radius:14px;
-    box-shadow:var(--shadow);overflow:hidden;
-  }
-  .dlg header{
-    display:flex;align-items:center;gap:8px;padding:11px 12px 9px;border-bottom:1px solid var(--line);
-  }
+  .dlg{width:100%;max-width:430px;max-height:86vh;display:flex;flex-direction:column;background:var(--card);
+    border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+  .dlg header{display:flex;align-items:center;gap:8px;padding:11px 12px 9px;border-bottom:1px solid var(--line)}
   .dlg h2{margin:0;font-size:13.5px;font-weight:700;flex:1 1 auto}
   .dlg h2 small{font-weight:500;color:var(--dim);font-size:10.5px;margin-left:4px}
-  .dlg header button{
-    width:24px;height:24px;border:0;border-radius:7px;background:var(--chip);
-    color:var(--txt);font-family:inherit;font-size:12px;line-height:1;padding:0;
-  }
+  .dlg header button{width:24px;height:24px;border:0;border-radius:7px;background:var(--chip);color:var(--txt);
+    font-family:inherit;font-size:12px;line-height:1;padding:0}
   .dlg .body{padding:10px 12px;overflow:auto;-webkit-overflow-scrolling:touch}
   .dlg .prices{display:flex;gap:5px;margin-bottom:9px}
-  .dlg .px{
-    flex:1 1 0;min-width:0;background:var(--chip);border:1px solid var(--line);
-    border-radius:8px;padding:5px 6px;font-size:9.5px;line-height:1.35;color:var(--dim);
-  }
-  .dlg .px b{display:block;font-size:8.5px;letter-spacing:.3px;color:var(--dim);font-weight:700;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .dlg .px span{display:block;font-size:11px;color:var(--txt);font-weight:700;font-variant-numeric:tabular-nums;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dlg .px{flex:1 1 0;min-width:0;background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:5px 6px;
+    font-size:9px;line-height:1.35;color:var(--dim)}
+  .dlg .px b{display:block;font-size:8.5px;letter-spacing:.3px;color:var(--dim);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dlg .px span{display:block;font-size:11px;color:var(--txt);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .dlg .px.nolive span{font-size:9.5px;color:var(--dim);font-weight:600}
-  .dlg footer button{white-space:nowrap;flex:0 0 auto}
-  .dlg form{display:grid;grid-template-columns:1fr 62px 1fr auto;gap:4px;margin-bottom:4px}
-  .dlg select,.dlg input{
-    width:100%;height:28px;font-family:inherit;font-size:11px;font-weight:600;
-    color:var(--txt);background:var(--chip);border:1px solid var(--chip-line);
-    border-radius:7px;padding:0 5px;-webkit-appearance:none;appearance:none;
-  }
+  .dlg form{display:grid;grid-template-columns:1fr 84px auto;gap:4px;margin-bottom:4px}
+  .dlg select,.dlg input{width:100%;height:28px;font-family:inherit;font-size:11px;font-weight:600;color:var(--txt);
+    background:var(--chip);border:1px solid var(--chip-line);border-radius:7px;padding:0 5px;-webkit-appearance:none;appearance:none}
   .dlg select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%238b95a5'/%3E%3C/svg%3E");
     background-repeat:no-repeat;background-position:right 5px center;background-size:8px 5px;padding-right:14px}
   .dlg input{text-align:right;font-variant-numeric:tabular-nums}
-  .dlg form button{
-    height:28px;border:0;border-radius:7px;background:#2b6cf0;color:#fff;
-    font-family:inherit;font-size:11px;font-weight:700;padding:0 10px;
-  }
+  .dlg form button{height:28px;border:0;border-radius:7px;background:#2b6cf0;color:#fff;font-family:inherit;font-size:11px;font-weight:700;padding:0 10px}
   .dlg form button:disabled{opacity:.42}
   .dlg .hint{font-size:9.5px;color:var(--dim);line-height:1.5;margin:5px 0 9px}
   .dlg .hint b{color:var(--txt)}
-  .fnote{font-size:9.5px;font-weight:700;color:var(--down);line-height:1.4;margin:-1px 0 7px;display:none}
-  .fnote.show{display:block}
   #lists{display:flex;flex-direction:column;gap:4px}
-  .al{
-    display:flex;align-items:center;gap:6px;background:var(--chip);
-    border:1px solid var(--line);border-radius:8px;padding:5px 6px;
-  }
+  .al{display:flex;align-items:center;gap:6px;background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:5px 6px}
   .al.fired{border-color:#f0c860;background:#fff8e6}
   body.dark .al.fired{border-color:#6b551f;background:#241d0f}
   .al.off{opacity:.55}
-  .al .who{flex:0 0 48px;font-size:9px;font-weight:800;color:var(--dim);letter-spacing:.2px;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .al .cond{flex:1 1 auto;min-width:0;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .al .who{flex:0 0 48px;font-size:9px;font-weight:800;color:var(--dim);letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .al .cond{flex:1 1 auto;min-width:0;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .al .cond i{font-style:normal;font-weight:600;font-size:9.5px;color:var(--dim);margin-left:4px}
   .al.fired .cond i{color:#a35f00}
   .al.unsup .cond i{color:#b0663a}
   .al button{border:0;border-radius:6px;font-family:inherit;line-height:1;padding:0;flex:0 0 auto}
-  .al .tg{width:34px;height:20px;font-size:9px;font-weight:700;color:var(--dim);background:var(--panel);
-    box-shadow:inset 0 0 0 1px var(--chip-line)}
+  .al .tg{width:34px;height:20px;font-size:9px;font-weight:700;color:var(--dim);background:var(--panel);box-shadow:inset 0 0 0 1px var(--chip-line)}
   .al .tg.on{color:#0b7a5b;background:#e3f6ef;box-shadow:inset 0 0 0 1px #b6e3d4}
   body.dark .al .tg.on{color:#67dfb9;background:#12281f;box-shadow:inset 0 0 0 1px #265441}
   .al .del{width:20px;height:20px;font-size:11px;color:var(--dim);background:transparent}
   .empty{font-size:10.5px;color:var(--dim);text-align:center;padding:12px 0}
-  .dlg footer{
-    display:flex;align-items:center;gap:6px;padding:8px 12px;border-top:1px solid var(--line);
-    font-size:9.5px;color:var(--dim);
-  }
+  .dlg footer{display:flex;align-items:center;gap:6px;padding:8px 12px;border-top:1px solid var(--line);font-size:9.5px;color:var(--dim)}
   .dlg footer span{flex:1 1 auto;line-height:1.4}
   .dlg footer span b{color:var(--txt)}
-  .dlg footer button{
-    height:24px;border:1px solid var(--chip-line);border-radius:7px;background:var(--chip);
-    color:var(--txt);font-family:inherit;font-size:10px;font-weight:700;padding:0 8px;
-  }
+  .dlg footer button{white-space:nowrap;height:24px;border:1px solid var(--chip-line);border-radius:7px;background:var(--chip);color:var(--txt);
+    font-family:inherit;font-size:10px;font-weight:700;padding:0 8px}
 
-  /* ── GitHub 동기화 패널 ───────────────────────── */
+  /* GitHub 동기화 */
   #ghPanel{border:1px solid var(--line);border-radius:9px;margin:0 0 9px;background:var(--panel);overflow:hidden}
-  #ghPanel>summary{
-    display:flex;align-items:center;gap:6px;list-style:none;cursor:pointer;
-    padding:6px 7px;font-size:10.5px;font-weight:700;color:var(--txt);
-  }
+  #ghPanel>summary{display:flex;align-items:center;gap:6px;list-style:none;cursor:pointer;padding:6px 7px;font-size:10.5px;font-weight:700;color:var(--txt)}
   #ghPanel>summary::-webkit-details-marker{display:none}
   #ghPanel>summary::after{content:'▾';margin-left:auto;color:var(--dim);font-size:10px}
   #ghPanel[open]>summary::after{content:'▴'}
-  .ghbadge{
-    font-size:9px;font-weight:700;color:var(--dim);border:1px solid var(--chip-line);background:var(--chip);
-    border-radius:20px;padding:1px 6px;max-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    font-variant-numeric:tabular-nums;
-  }
+  .ghbadge{font-size:9px;font-weight:700;color:var(--dim);border:1px solid var(--chip-line);background:var(--chip);
+    border-radius:20px;padding:1px 6px;max-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
   .ghbadge.ok{color:#0b7a5b;border-color:#b6e3d4;background:#e3f6ef}
   .ghbadge.err{color:var(--down);border-color:#f0c0bd;background:#fdeceb}
   .ghbadge.sync{color:#1b5fd0;border-color:#bcd0f5;background:#e7eefc}
@@ -280,35 +247,19 @@
   .ghb label{display:block;font-size:9px;font-weight:700;color:var(--dim);margin:5px 0 2px}
   .ghb input{width:100%;height:26px;text-align:left;font-size:10.5px;font-weight:500}
   .ghrow{display:flex;gap:5px;margin-top:6px}
-  .ghrow button{
-    height:26px;border:1px solid var(--chip-line);border-radius:7px;background:var(--chip);color:var(--txt);
-    font-family:inherit;font-size:10.5px;font-weight:700;padding:0 9px;
-  }
+  .ghrow button{height:26px;border:1px solid var(--chip-line);border-radius:7px;background:var(--chip);color:var(--txt);
+    font-family:inherit;font-size:10.5px;font-weight:700;padding:0 9px}
   .ghrow button.primary{background:#2b6cf0;border-color:#2b6cf0;color:#fff}
   .ghhint{font-size:9px;color:var(--dim);line-height:1.5;margin:6px 0 0}
   .ghhint b{color:var(--txt)}
 
-  /* ── 오른쪽 가장자리 + (가격 알림 추가) ─────────── */
-  #fab{
-    position:fixed;right:5px;top:50%;transform:translateY(-50%);z-index:40;
-    width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    border:1px solid var(--chip-line);background:var(--card);color:var(--txt);
-    font-family:inherit;font-size:17px;font-weight:600;line-height:1;padding:0 0 1px;
-    box-shadow:0 3px 10px rgba(16,24,40,.2);opacity:.92;
-  }
-  #fab:active{background:var(--sel);color:var(--sel-tx)}
-  body.dark #fab{box-shadow:0 3px 10px rgba(0,0,0,.55)}
-  body.modalOpen #fab{display:none}
-
-  /* ── 종목 모달 ─────────────────────────────────── */
+  /* 종목 모달 */
   #symModal .body{padding:10px 12px 4px}
   .slot{border:1px solid var(--line);border-radius:9px;padding:6px 7px;margin-bottom:7px;background:var(--panel)}
   .slot.on{border-color:#2b6cf0;box-shadow:0 0 0 2px rgba(43,108,240,.16)}
   .srow{display:flex;align-items:center;gap:5px}
-  .sn{
-    flex:0 0 17px;height:17px;border-radius:5px;display:flex;align-items:center;justify-content:center;
-    font-size:9.5px;font-weight:800;background:var(--sel);color:var(--sel-tx);
-  }
+  .sn{flex:0 0 17px;height:17px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+    font-size:9.5px;font-weight:800;background:var(--sel);color:var(--sel-tx)}
   .slot select{flex:1 1 auto;min-width:0;height:27px}
   .slot .sstate{flex:0 0 auto;font-size:8.5px;font-weight:700;color:var(--dim);letter-spacing:.2px}
   .slot .sstate.live{color:#0b7a5b}
@@ -316,10 +267,8 @@
   .slot .custom{display:none;margin-top:5px;gap:5px}
   .slot .custom.show{display:flex}
   .slot .custom input{flex:1 1 auto;min-width:0;height:27px;text-align:left;text-transform:uppercase}
-  .slot .sapply{
-    flex:0 0 auto;height:27px;border:0;border-radius:7px;background:#2b6cf0;color:#fff;
-    font-family:inherit;font-size:10.5px;font-weight:700;padding:0 10px;
-  }
+  .slot .sapply{flex:0 0 auto;height:27px;border:0;border-radius:7px;background:#2b6cf0;color:#fff;font-family:inherit;
+    font-size:10.5px;font-weight:700;padding:0 10px}
   .serr{margin:4px 0 0;font-size:9.5px;font-weight:600;color:var(--down);line-height:1.35;display:none}
   .serr.show{display:block}
 </style>
@@ -340,17 +289,18 @@
         <button type="button" data-iv="W">1W</button>
       </div>
     </nav>
-    <div id="zoomChips" role="group" aria-label="화면 전환">
-      <button type="button" data-z="0" aria-label="1번 차트 1화면">1</button>
-      <button type="button" data-z="1" aria-label="2번 차트 1화면">2</button>
-      <button type="button" data-z="2" aria-label="3번 차트 1화면">3</button>
-      <button type="button" data-z="all" class="back" aria-label="3분할로 돌아가기">3분할 ↩</button>
+    <div id="zoomChips" role="group" aria-label="화면 전환"></div>
+    <div id="lay" role="group" aria-label="화면 분할">
+      <button type="button" data-lay="1" aria-label="1분할" title="1분할">1</button>
+      <button type="button" data-lay="2" aria-label="2분할" title="2분할">2</button>
+      <button type="button" data-lay="3" aria-label="3분할" title="3분할">3</button>
+      <button type="button" data-lay="4" aria-label="4분할" title="4분할">4</button>
     </div>
     <div id="tools">
       <button id="symBtn" type="button" aria-label="차트 종목 변경" title="차트 종목 변경">
-        <span class="ic" aria-hidden="true">▦</span>종목
+        <span class="ic" aria-hidden="true">▦</span><span class="t">종목</span>
       </button>
-      <button id="toolsBtn" type="button" aria-label="작도 도구 패널" title="작도 도구 패널 (피보나치·채널·측정)">
+      <button id="toolsBtn" type="button" aria-label="작도 도구" title="작도 도구 (수평선·추세선·채널·피보나치·측정)">
         <span aria-hidden="true">✏️</span><span class="t" aria-hidden="true">도구</span>
       </button>
       <button id="alertBtn" type="button" aria-label="가격 알림">
@@ -363,70 +313,47 @@
     </div>
   </div>
 
-  <main id="grid">
+  <div id="toolbar" aria-label="작도 도구">
+    <button type="button" data-tool="hline">↔ 수평선</button>
+    <button type="button" data-tool="trend">╱ 추세선</button>
+    <button type="button" data-tool="channel">∥ 채널</button>
+    <button type="button" data-tool="fib">𝔽 피보</button>
+    <button type="button" data-tool="fiblext">⇗ 확장</button>
+    <button type="button" data-tool="fibtime">⏱ 타임존</button>
+    <span class="sep"></span>
+    <button type="button" data-tool="long">↗ 롱</button>
+    <button type="button" data-tool="short">↘ 숏</button>
+    <button type="button" data-tool="measure">📏 측정</button>
+    <span class="sep"></span>
+    <button type="button" id="undoDraw">↶ 되돌리기</button>
+    <button type="button" id="clearDraw">⌫ 지우기</button>
+    <span class="hint">차트를 눌러 그려요 ·두 번 탭하면 1화면</span>
+  </div>
 
-    <div class="panel" role="group" aria-label="BTC/USDT 차트" data-slot="p1" data-symbol="BINANCE:BTCUSDT" data-label="BTC/USDT">
-      <div class="dz" role="button" tabindex="0" aria-label="이 차트를 1화면으로 확대 (두 번 탭)"><i>⤢</i></div>
-      <button class="tag" type="button" aria-label="BTC/USDT 종목 변경">BTC/USDT</button>
-      <div class="chart">
-        <div class="wrap">
-          <div class="tradingview-widget-container"></div>
-          <div class="msg"><div><p>차트를 불러오지 못했어요.<br><span>인터넷 연결을 확인해 주세요.</span></p><button class="retry" type="button">다시 시도</button></div></div>
-        </div>
-        <div class="cpr"><a href="https://www.tradingview.com/symbols/BINANCE-BTCUSDT/" target="_blank" rel="noopener nofollow">BTCUSDT</a>&nbsp;by TradingView</div>
-      </div>
-    </div>
-
-    <div class="panel" role="group" aria-label="NAS100 차트" data-slot="p2" data-symbol="OANDA:NAS100USD" data-label="NAS100">
-      <div class="dz" role="button" tabindex="0" aria-label="이 차트를 1화면으로 확대 (두 번 탭)"><i>⤢</i></div>
-      <button class="tag" type="button" aria-label="NAS100 종목 변경">NAS100</button>
-      <div class="chart">
-        <div class="wrap">
-          <div class="tradingview-widget-container"></div>
-          <div class="msg"><div><p>차트를 불러오지 못했어요.<br><span>인터넷 연결을 확인해 주세요.</span></p><button class="retry" type="button">다시 시도</button></div></div>
-        </div>
-        <div class="cpr"><a href="https://www.tradingview.com/symbols/OANDA-NAS100USD/" target="_blank" rel="noopener nofollow">NAS100USD</a>&nbsp;by TradingView</div>
-      </div>
-    </div>
-
-    <div class="panel" role="group" aria-label="XAUUSD 차트" data-slot="p3" data-symbol="OANDA:XAUUSD" data-label="XAUUSD">
-      <div class="dz" role="button" tabindex="0" aria-label="이 차트를 1화면으로 확대 (두 번 탭)"><i>⤢</i></div>
-      <button class="tag" type="button" aria-label="XAUUSD 종목 변경">XAUUSD</button>
-      <div class="chart">
-        <div class="wrap">
-          <div class="tradingview-widget-container"></div>
-          <div class="msg"><div><p>차트를 불러오지 못했어요.<br><span>인터넷 연결을 확인해 주세요.</span></p><button class="retry" type="button">다시 시도</button></div></div>
-        </div>
-        <div class="cpr"><a href="https://www.tradingview.com/symbols/OANDA-XAUUSD/" target="_blank" rel="noopener nofollow">XAUUSD</a>&nbsp;by TradingView</div>
-      </div>
-    </div>
-
-  </main>
+  <main id="grid"></main>
 </div>
 
 <div id="banner" role="status" aria-live="polite">
   <div class="brow"><div class="btxt" id="bannerText"></div><button type="button" id="bannerClose" aria-label="알림 닫기">✕</button></div>
 </div>
+<div id="toast" role="status" aria-live="polite"></div>
 
-<div id="modal" role="dialog" aria-modal="true" aria-label="가격 알림 설정">
+<div id="modal" role="dialog" aria-modal="true" aria-label="돌파 알림">
   <div class="dlg card">
     <header>
-      <h2>가격 알림<small id="alCount">0 / 30</small></h2>
+      <h2>돌파 알림<small id="alCount">0 / 30</small></h2>
       <button type="button" id="modalClose" aria-label="닫기">✕</button>
     </header>
     <div class="body">
       <div class="prices" id="pxRow"></div>
       <form id="addForm" autocomplete="off">
         <select id="fSym" aria-label="종목"></select>
-        <select id="fDir" aria-label="조건">
-          <option value="above">이상 ≥</option>
-          <option value="below">이하 ≤</option>
-        </select>
         <input id="fPrice" type="text" inputmode="decimal" placeholder="목표가" aria-label="목표가">
         <button id="addBtn" type="submit">추가</button>
       </form>
-      <p class="fnote" id="fSymNote">실시간 알림 미지원 (차트 전용)</p>
-      <p class="hint" id="hint">10초마다 가격을 확인합니다. 목표가에 닿으면 화면 배너·비프음·(허용 시) 알림으로 알려드려요.</p>
+      <p class="fnote" id="fSymNote">실시간 알림 미지원 (서버 감시 전용)</p>
+      <p class="hint" id="hint">목표가를 <b>위로 지나갈 때</b> 또는 <b>아래로 지나갈 때</b> 한 번만 알려드려요.
+        이미 목표가 위(또는 아래)에 있어도 바로 울리지 않고, 가격이 그 선을 새로 지나갈 때만 울립니다.</p>
       <details id="ghPanel">
         <summary><span>🔄 GitHub 동기화</span><span class="ghbadge" id="ghBadge">미설정</span></summary>
         <div class="ghb">
@@ -441,7 +368,7 @@
           </div>
           <p class="ghhint">토큰은 <b>이 브라우저(localStorage)에만</b> 저장되고 저장소에는 올라가지 않습니다.
             토큰 권한은 <b>Contents: Read and write</b>(해당 저장소만)면 충분해요.
-            동기화하면 피클이 <b>24시간 5분마다</b> 이 목록을 확인해 목표가 도달 시 앱 알림으로 알려드립니다.
+            동기화하면 피클이 <b>5분마다</b> 이 목록을 확인해 목표가를 돌파할 때 앱 알림으로 알려드립니다.
             저장소가 없다면 GitHub에서 비공개 저장소 <b>chart-alerts</b>를 먼저 만들어 주세요.</p>
         </div>
       </details>
@@ -457,15 +384,14 @@
 <div id="symModal" role="dialog" aria-modal="true" aria-label="차트 종목 설정">
   <div class="dlg">
     <header>
-      <h2>차트 종목<small>3개 슬롯</small></h2>
+      <h2>차트 종목<small>4개 슬롯</small></h2>
       <button type="button" id="symClose" aria-label="닫기">✕</button>
     </header>
     <div class="body">
       <div id="slotRows"></div>
       <p class="hint">종목을 바꾸면 그 차트가 곧바로 새로 그려지고, 앱을 다시 열어도 그대로 유지됩니다.
-        가격 알림은 <b>모든 종목</b>에 걸 수 있어요. 탭을 열어 둔 동안의 알림은 시세를 자동 조회할 수 있는
-        <b>바이낸스 코인 · 금·은 · 지수 · 미장/국장 주식 · 환율</b>에서 동작하고, 그 밖의 종목은
-        <b>서버 24시간 감시</b>(GitHub 동기화)로 알려드립니다.</p>
+        캔들 데이터는 <b>바이낸스 코인 · 미국 주식 · 나스닥/다우/코스피 지수 · 금·은 · 환율</b>에서 불러옵니다.
+        그 밖의 종목은 차트 대신 안내가 나오고, 알림은 <b>5분 서버 감시</b>(GitHub 동기화)로 계속 확인합니다.</p>
     </div>
     <footer>
       <span>직접 입력은 TradingView 심볼 형식이에요. 예: <b>KRX:005930</b>, <b>NASDAQ:AAPL</b>, <b>BINANCE:XRPUSDT</b></span>
@@ -474,1240 +400,9 @@
   </div>
 </div>
 
-<button id="fab" type="button" aria-label="가격 알림 추가" title="가격 알림 추가">+</button>
-
 <noscript><p style="padding:20px;font-size:14px">차트를 보려면 브라우저에서 JavaScript를 켜 주세요.</p></noscript>
 
-<script>
-(function () {
-  'use strict';
-
-  var STORE = 'btc-ndx-gold-3split.v4';
-  var LEGACY_STORES = ['btc-ndx-gold-3split.v3', 'btc-ndx-gold-3split.v2'];
-  var ALERT_STORE = 'btc-ndx-gold-3split.alerts.v1';
-  var GH_STORE = 'btc-ndx-gold-3split.gh.v1';
-  var GH_DEFAULT_REPO = '09eh1205-afk/chart-alerts';
-  var GH_FILE = 'alerts.json';
-  var TIP_STORE = 'btc-ndx-gold-3split.zoomtip.v1';
-  var INTERVALS = ['1', '5', '15', '30', '60', '240', 'D', 'W'];
-  var MAX_ALERTS = 30, POLL_MS = 10000;
-  var WIDGET_SRC = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-  var TIMEZONE = 'Asia/Seoul';
-  /* 무료 공개 지표: TradingView 기본 VPVR은 유료 전용이라 임베드 위젯에서 동작하지 않는다.
-     대신 커뮤니티 무료 스크립트 'Volume Profile'(kv4coins, 2.6만 좋아요)을 쓰고
-     'Use Visible Range' 옵션으로 화면에 보이는 구간 기준 프로파일(VPVR)로 동작시킨다. */
-  var VP_SCRIPT = 'PUB;X0dKLxdLh46AZbqGl3Bgxb83fo9oWlDe';
-  var SYM_RE = /^[A-Z0-9_.\-!]+:[A-Z0-9_.\-]+$/;
-
-  /* ── 인기 프리셋 (TradingView 심볼, 알약 라벨) ── */
-  var PRESETS = [
-    { g: '코인', items: [
-      ['BINANCE:BTCUSDT', 'BTC/USDT'],
-      ['BINANCE:ETHUSDT', 'ETH/USDT'],
-      ['BINANCE:SOLUSDT', 'SOL/USDT'],
-      ['BINANCE:XRPUSDT', 'XRP/USDT'],
-      ['BINANCE:DOGEUSDT', 'DOGE/USDT']
-    ] },
-    { g: '지수', items: [
-      ['OANDA:NAS100USD', 'NAS100'],
-      ['OANDA:SPX500USD', 'S&P500'],
-      ['OANDA:US30USD', 'DOW30'],
-      ['KRX:KOSPI', 'KOSPI']
-    ] },
-    { g: '미국 주식', items: [
-      ['NASDAQ:NVDA', 'NVDA'],
-      ['NASDAQ:TSLA', 'TSLA'],
-      ['NASDAQ:AAPL', 'AAPL'],
-      ['NASDAQ:MSFT', 'MSFT']
-    ] },
-    { g: '한국 주식', items: [
-      ['KRX:005930', '005930'],
-      ['KRX:000660', '000660']
-    ] },
-    { g: '원자재·환율', items: [
-      ['OANDA:XAUUSD', 'XAUUSD'],
-      ['OANDA:XAGUSD', 'XAGUSD'],
-      ['FX_IDC:USDKRW', 'USD/KRW']
-    ] }
-  ];
-
-  /* 웹 탭 안에서 10초마다 확인할 수 있는 시세 소스.
-     - 바이낸스 현물(USDT 등): 바이낸스 공개 API
-     - 금(XAUUSD): gold-api + Yahoo 금 선물
-     - 그 밖의 지수·주식·환율: Yahoo Finance(브라우저 CORS 때문에 r.jina.ai 프록시)
-     여기에 없는 종목도 알림은 걸 수 있고, 그때는 서버 24시간 감시(GitHub 동기화)가 맡는다. */
-  var YAHOO_TICKER = {
-    'OANDA:XAUUSD': 'GC=F',
-    'OANDA:XAGUSD': 'SI=F',
-    'OANDA:NAS100USD': '^NDX',
-    'OANDA:SPX500USD': '^GSPC',
-    'OANDA:US30USD': '^DJI',
-    'OANDA:DE40EUR': '^GDAXI',
-    'OANDA:JP225USD': '^N225',
-    'FX_IDC:USDKRW': 'KRW=X',
-    'FX_IDC:USDJPY': 'JPY=X',
-    'FX_IDC:EURUSD': 'EURUSD=X',
-    'KRX:KOSPI': '^KS11',
-    'KRX:KOSDAQ': '^KQ11'
-  };
-
-  function binancePair(symbol) {
-    var m = /^BINANCE:([A-Z0-9]+)(USDT|USDC|FDUSD|BTC|ETH)$/.exec(symbol || '');
-    return m ? m[1] + m[2] : null;
-  }
-
-  function yahooTicker(symbol) {
-    if (YAHOO_TICKER[symbol]) return YAHOO_TICKER[symbol];
-    var m = /^([A-Z_]+):(.+)$/.exec(symbol || '');
-    if (!m) return null;
-    var ex = m[1], code = m[2];
-    if (ex === 'KRX') return /^[0-9]{6}$/.test(code) ? code + '.KS' : null;
-    if (ex === 'NASDAQ' || ex === 'NYSE' || ex === 'AMEX' || ex === 'NYSEARCA') return code;
-    if (ex === 'FX' || ex === 'FX_IDC') return code.replace('/', '') + '=X';
-    return null;
-  }
-
-  /* 이 브라우저 탭에서 가격을 자동 조회할 수 있는 종목인가 */
-  function hasLive(symbol) {
-    return !!(binancePair(symbol) || yahooTicker(symbol));
-  }
-
-  var DEFAULT_SLOTS = [
-    { symbol: 'BINANCE:BTCUSDT', label: 'BTC/USDT' },
-    { symbol: 'OANDA:NAS100USD', label: 'NAS100' },
-    { symbol: 'OANDA:XAUUSD', label: 'XAUUSD' }
-  ];
-
-  var slots = DEFAULT_SLOTS.map(function (d, i) { return { id: 'p' + (i + 1), symbol: d.symbol, label: d.label }; });
-  var panels = Array.prototype.slice.call(document.querySelectorAll('.panel'));
-  var state = { interval: '15', theme: 'light', zoom: -1, tools: false };   /* zoom: -1 = 3분할, 0·1·2 = 그 차트만 1화면 · tools = 작도 도구 패널 */
-  var alerts = [];
-  var lastSlot = 0;           /* 마지막으로 보고 있던 슬롯 — + 버튼이 이 슬롯으로 모달을 연다 */
-  var gh = {                  /* GitHub 동기화: 토큰은 이 브라우저에만 둔다(코드·저장소에 넣지 않음) */
-    repo: GH_DEFAULT_REPO, token: '', busy: false, again: false,
-    status: { k: '', m: '미설정' }
-  };
-  var prices = {};            /* 실시간 키(btc/gold/ndx) -> {v:Number, t:Date, src:String, err:String} */
-  var bannerTimer = null;
-  var audioCtx = null;
-
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-
-  /* ── 종목 헬퍼 ───────────────────────────────── */
-  function isPreset(sym) {
-    for (var i = 0; i < PRESETS.length; i++) {
-      for (var j = 0; j < PRESETS[i].items.length; j++) {
-        if (PRESETS[i].items[j][0] === sym) return true;
-      }
-    }
-    return false;
-  }
-
-  function labelFor(sym) {
-    for (var i = 0; i < PRESETS.length; i++) {
-      for (var j = 0; j < PRESETS[i].items.length; j++) {
-        if (PRESETS[i].items[j][0] === sym) return PRESETS[i].items[j][1];
-      }
-    }
-    var parts = String(sym).split(':');
-    return parts[1] || sym;
-  }
-
-  function slotIndex(id) {
-    for (var i = 0; i < slots.length; i++) if (slots[i].id === id) return i;
-    return -1;
-  }
-
-  /* ── 저장/복원 ────────────────────────────────── */
-  function readStore() {
-    var s = null, raw = null;
-    try {
-      raw = localStorage.getItem(STORE);
-      if (raw) s = JSON.parse(raw);
-      for (var i = 0; !s && i < LEGACY_STORES.length; i++) {
-        var r = localStorage.getItem(LEGACY_STORES[i]);
-        if (r) s = JSON.parse(r);
-      }
-    } catch (e) { s = null; }
-    return s;
-  }
-
-  function load() {
-    var s = readStore();
-    if (s) {
-      if (INTERVALS.indexOf(s.interval) >= 0) state.interval = s.interval;
-      if (s.theme === 'dark') state.theme = 'dark';
-      if (typeof s.tools === 'boolean') state.tools = s.tools;
-      if (Array.isArray(s.slots)) {
-        s.slots.slice(0, 3).forEach(function (x, i) {
-          if (x && typeof x.symbol === 'string') {
-            var sym = String(x.symbol).toUpperCase().trim();
-            if (SYM_RE.test(sym)) {
-              slots[i].symbol = sym;
-              slots[i].label = (typeof x.label === 'string' && x.label) ? x.label : labelFor(sym);
-            }
-          }
-        });
-      }
-    }
-    loadAlerts();
-  }
-
-  function loadAlerts() {
-    try {
-      var ra = localStorage.getItem(ALERT_STORE);
-      if (!ra) return;
-      var arr = JSON.parse(ra);
-      if (!Array.isArray(arr)) return;
-      var slotAlias = { btc: 'p1', ndx: 'p2', gold: 'p3', p1: 'p1', p2: 'p2', p3: 'p3' };
-      alerts = arr.map(function (a, i) {
-        if (!a) return null;
-        var sym = a.symbol;
-        if (!sym) {                       /* 예전 형식: 슬롯(p1/p2/p3)만 저장돼 있음 */
-          var si = slotIndex(slotAlias[a.slot] || a.slot);
-          if (si < 0) return null;
-          sym = slots[si].symbol;
-        }
-        sym = String(sym).toUpperCase().trim();
-        if (!SYM_RE.test(sym)) return null;
-        if (a.dir !== 'above' && a.dir !== 'below') return null;
-        if (!isFinite(a.price) || a.price <= 0) return null;
-        return {
-          id: a.id || ('a' + Date.now().toString(36) + i),
-          symbol: sym,
-          label: (typeof a.label === 'string' && a.label) ? a.label : labelFor(sym),
-          dir: a.dir,
-          price: Number(a.price),
-          on: a.on !== false,
-          firedAt: a.firedAt || null,
-          updated: a.updated || 0,
-          del: !!a.del
-        };
-      }).filter(Boolean).slice(0, MAX_ALERTS);
-    } catch (e) {}
-  }
-
-  function liveAlerts() {
-    return alerts.filter(function (a) { return !a.del; });
-  }
-
-  function saveLayout() {
-    try {
-      localStorage.setItem(STORE, JSON.stringify({ interval: state.interval, theme: state.theme, tools: state.tools, slots: slots }));
-    } catch (e) {}
-  }
-  function saveAlerts() {
-    try { localStorage.setItem(ALERT_STORE, JSON.stringify(alerts)); } catch (e) {}
-  }
-
-  /* ── 숫자 표기 ────────────────────────────────── */
-  function fmt(n) {
-    if (n === null || n === undefined || !isFinite(n)) return '–';
-    return n.toLocaleString('en-US', { maximumFractionDigits: (n < 10 ? 4 : 2) });
-  }
-  function fmtTime(d) {
-    if (!d) return '';
-    var h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
-    return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
-  }
-
-  /* ── 테마 ────────────────────────────────────── */
-  function applyTheme() {
-    var dark = state.theme === 'dark';
-    document.body.classList.toggle('dark', dark);
-    var b = document.getElementById('themeBtn');
-    b.textContent = dark ? '☀️' : '🌙';
-    b.setAttribute('aria-label', dark ? '화이트모드 전환' : '다크모드 전환');
-    var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', dark ? '#0b0e11' : '#f4f6f8');
-  }
-
-  /* ── 차트 위젯 ────────────────────────────────── */
-  /* 캔들 아래 RSI 패널 + 가격 패널 위 VPVR(보이는 구간) 오버레이 */
-  function studies(w, h) {
-    var rows = 22;                                  /* 프로파일 행 수 */
-    var thickness = Math.max(2, Math.min(12, Math.round((h * 0.6) / rows)));
-    var mult = Math.max(8, Math.min(18, Math.round(w * 0.04)));
-    return [
-      { id: 'STD;RSI' },                            /* 14기간 RSI, 하단 패널 */
-      { id: VP_SCRIPT, inputs: {
-          in_0: true,                               /* Use Visible Range = VPVR */
-          in_5: 0,                                  /* Right Offset */
-          in_2: rows,                               /* Number of Volume Bars */
-          in_3: thickness,                          /* Bar Thickness */
-          in_4: mult,                               /* Bar Length Multiplier */
-          in_7: 'rgba(120,123,134,0.38)',            /* 막대 색 */
-          in_11: false                              /* Value Area 채움은 끄고 라인만 */
-      } }
-    ];
-  }
-
-  function config(panel) {
-    var dark = state.theme === 'dark';
-    var wrap = panel ? panel.querySelector('.wrap') : null;
-    var w = wrap ? wrap.clientWidth : 320;
-    var h = wrap ? wrap.clientHeight : 320;
-    return {
-      autosize: true,
-      symbol: panel.dataset.symbol,
-      interval: state.interval,
-      timezone: TIMEZONE,
-      theme: dark ? 'dark' : 'light',
-      style: '1',
-      locale: 'kr',
-      backgroundColor: dark ? 'rgba(11, 14, 17, 1)' : 'rgba(255, 255, 255, 1)',
-      gridColor: dark ? 'rgba(43, 50, 64, 0.5)' : 'rgba(20, 26, 33, 0.07)',
-      hide_top_toolbar: true,
-      hide_legend: true,
-      hide_side_toolbar: !state.tools,
-      allow_symbol_change: false,
-      withdateranges: false,
-      details: false,
-      calendar: false,
-      hide_volume: true,
-      save_image: false,
-      show_popup_button: false,
-      enable_publishing: false,
-      studies: studies(w, h),
-      support_host: 'https://www.tradingview.com'
-    };
-  }
-
-  function destroy(panel) {
-    panel._gen = (panel._gen || 0) + 1;
-    panel.querySelector('.tradingview-widget-container').innerHTML = '';
-    panel.querySelector('.msg').className = 'msg';
-    return panel._gen;
-  }
-
-  function build(panel) {
-    var gen = destroy(panel);
-    var holder = panel.querySelector('.tradingview-widget-container');
-    var widgetDiv = document.createElement('div');
-    widgetDiv.className = 'tradingview-widget-container__widget';
-    holder.appendChild(widgetDiv);
-
-    var script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.async = true;
-    script.src = WIDGET_SRC;
-    script.text = JSON.stringify(config(panel));
-    holder.appendChild(script);
-
-    window.setTimeout(function () {
-      if (panel._gen !== gen) return;
-      if (!holder.querySelector('iframe')) panel.querySelector('.msg').className = 'msg show';
-    }, 12000);
-  }
-
-  function buildAll(stagger) {
-    panels.forEach(function (panel, i) {
-      if (stagger) window.setTimeout(function () { build(panel); }, i * 120);
-      else build(panel);
-    });
-  }
-
-  /* 1화면 확대 중에는 보이는 패널만 다시 그린다 */
-  function buildVisible(stagger) {
-    panels.forEach(function (panel, i) {
-      if (state.zoom >= 0 && state.zoom !== i) return;
-      if (stagger) window.setTimeout(function () { build(panel); }, i * 120);
-      else build(panel);
-    });
-  }
-
-  function paintIntervals() {
-    Array.prototype.forEach.call(document.querySelectorAll('#ivs button'), function (b) {
-      var on = b.dataset.iv === state.interval;
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-pressed', on ? 'true' : 'false');
-    });
-    var on = document.querySelector('#ivs button.on');
-    if (on && on.scrollIntoView) { try { on.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {} }
-  }
-
-  /* 작도 도구 패널(피보나치·채널·측정 등) 켜기/끄기 */
-  function paintToolsBtn() {
-    var b = document.getElementById('toolsBtn');
-    if (!b) return;
-    b.classList.toggle('on', !!state.tools);
-    b.setAttribute('aria-pressed', state.tools ? 'true' : 'false');
-    b.title = state.tools ? '작도 도구 패널 끄기' : '작도 도구 패널 (피보나치·채널·측정)';
-  }
-
-  document.getElementById('toolsBtn').addEventListener('click', function () {
-    state.tools = !state.tools;
-    paintToolsBtn(); saveLayout(); buildVisible(true);
-  });
-
-  Array.prototype.forEach.call(document.querySelectorAll('#ivs button'), function (b) {
-    b.addEventListener('click', function () {
-      if (state.interval === b.dataset.iv) return;
-      state.interval = b.dataset.iv;
-      paintIntervals(); saveLayout(); buildVisible(false);
-    });
-  });
-
-  document.getElementById('reloadAll').addEventListener('click', function () { buildVisible(true); });
-
-  /* 화면 회전 시 패널 크기가 바뀌므로 지표 굵기를 다시 계산해 그린다 */
-  var lastW = window.innerWidth, lastH = window.innerHeight, rotTimer = null;
-  function onRotate() {
-    if (rotTimer) window.clearTimeout(rotTimer);
-    rotTimer = window.setTimeout(function () { rotTimer = null; buildVisible(false); }, 500);
-  }
-  if ('onorientationchange' in window) window.addEventListener('orientationchange', onRotate);
-  window.addEventListener('resize', function () {
-    if (Math.abs(window.innerWidth - lastW) <= 60 && Math.abs(window.innerHeight - lastH) <= 60) return;
-    lastW = window.innerWidth; lastH = window.innerHeight;
-    onRotate();
-  });
-
-  document.getElementById('themeBtn').addEventListener('click', function () {
-    state.theme = state.theme === 'dark' ? 'light' : 'dark';
-    applyTheme(); saveLayout(); buildVisible(false); renderModal();
-  });
-
-  panels.forEach(function (panel) {
-    panel.addEventListener('click', function (e) {
-      var t = e.target;
-      if (t && t.classList && t.classList.contains('retry')) build(panel);
-    });
-  });
-
-  /* ── 1화면 확대 ↔ 3분할 ───────────────────────── */
-  var chipBox = document.getElementById('zoomChips');
-
-  function syncZoom() {
-    var z = state.zoom;
-    document.getElementById('grid').classList.toggle('zoom', z >= 0);
-    document.body.classList.toggle('zoomed', z >= 0);
-    panels.forEach(function (p, i) { p.classList.toggle('z', z === i); });
-    chipBox.classList.toggle('show', z >= 0);
-    Array.prototype.forEach.call(chipBox.querySelectorAll('button[data-z]'), function (b) {
-      var on = (b.dataset.z === 'all') ? (z < 0) : (String(z) === b.dataset.z);
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-pressed', on ? 'true' : 'false');
-    });
-    /* 컨테이너 크기가 바뀌었으니 위젯이 새 크기에 맞춰 다시 그리도록 알린다 */
-    window.setTimeout(function () {
-      try { window.dispatchEvent(new Event('resize')); } catch (e) {}
-      nudgeCharts();
-    }, 80);
-  }
-
-  /* 크기가 바뀐 패널의 iframe이 아직 예전 폭이면 그 패널만 다시 그린다(안전망) */
-  function nudgeCharts() {
-    panels.forEach(function (panel, i) {
-      if (state.zoom >= 0 && state.zoom !== i) return;
-      var wrap = panel.querySelector('.wrap');
-      var ifr = panel.querySelector('iframe');
-      if (!wrap || !ifr) return;
-      var iw = ifr.getBoundingClientRect().width;
-      if (Math.abs(iw - wrap.clientWidth) > 6) build(panel);
-    });
-  }
-
-  function setZoom(i) {
-    if (i === null || i === undefined || i === 'all' || i < 0 || i >= panels.length) i = -1;
-    i = Number(i);
-    if (isNaN(i)) i = -1;
-    if (i === state.zoom) return;
-    state.zoom = i;
-    if (i >= 0) lastSlot = i;
-    zoomChangedAt = Date.now();
-    syncZoom();
-  }
-
-  Array.prototype.forEach.call(chipBox.querySelectorAll('button[data-z]'), function (b) {
-    b.addEventListener('click', function () {
-      setZoom(b.dataset.z === 'all' ? -1 : Number(b.dataset.z));
-    });
-  });
-
-  /* 패널 위쪽 18px 존에서 두 번 탭/더블 클릭 → 그 패널만 1화면, 다시 하면 3분할.
-     터치 두 번 탭은 pointerup 두 번으로 처리하고, 브라우저가 이어서 보내는 dblclick은
-     (확대/복귀 직후 좌표 아래 대상이 바뀌어 다른 패널로 갈 수 있으므로) 한동안 무시한다. */
-  var zoomChangedAt = 0;
-
-  panels.forEach(function (panel, i) {
-    var dz = panel.querySelector('.dz');
-    var lastTap = 0, lastX = 0, lastY = 0;
-
-    function toggle() {
-      setZoom(state.zoom === i ? -1 : i);
-    }
-
-    dz.addEventListener('pointerup', function (e) {
-      if (e.pointerType === 'mouse' && e.button !== 0) return;
-      var now = Date.now();
-      if (now - zoomChangedAt < 320) { lastTap = 0; return; }
-      if (now - lastTap < 340 && Math.abs(e.clientX - lastX) < 34 && Math.abs(e.clientY - lastY) < 34) {
-        lastTap = 0;
-        toggle();
-      } else {
-        lastTap = now; lastX = e.clientX; lastY = e.clientY;
-      }
-    });
-
-    dz.addEventListener('dblclick', function (e) {
-      e.preventDefault();
-      if (Date.now() - zoomChangedAt < 700) return;   /* 방금 바뀐 확대 상태와 중복 토글 방지 */
-      toggle();
-    });
-
-    dz.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
-    });
-  });
-
-  /* ── 가격 조회 (공개 API, CORS 허용 소스만) ────── */
-  function jinaMeta(text) {
-    var i = text.indexOf('{"chart"');
-    if (i < 0) throw new Error('no json');
-    var j = JSON.parse(text.slice(i));
-    var m = j.chart && j.chart.result && j.chart.result[0] && j.chart.result[0].meta;
-    var v = m && (m.regularMarketPrice || m.previousClose);
-    if (!isFinite(v)) throw new Error('no price');
-    return Number(v);
-  }
-
-  function binancePrice(j) { return Number(j.price); }
-
-  function fetchWithTimeout(url, ms) {
-    var ctrl = ('AbortController' in window) ? new AbortController() : null;
-    var timer = ctrl ? window.setTimeout(function () { ctrl.abort(); }, ms) : null;
-    return fetch(url, { signal: ctrl ? ctrl.signal : undefined, cache: 'no-store', mode: 'cors' })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
-      .then(function (t) { if (timer) window.clearTimeout(timer); return t; })
-      .catch(function (e) { if (timer) window.clearTimeout(timer); throw e; });
-  }
-
-  function sourcesFor(symbol) {
-    var list = [];
-    var bp = binancePair(symbol);
-    if (bp) {
-      list.push({ name: 'Binance', url: 'https://data-api.binance.vision/api/v3/ticker/price?symbol=' + bp,
-        pick: binancePrice });
-      list.push({ name: 'Binance.com', url: 'https://api.binance.com/api/v3/ticker/price?symbol=' + bp,
-        pick: binancePrice });
-    }
-    if (symbol === 'OANDA:XAUUSD' || symbol === 'OANDA:XAGUSD') {
-      list.push({ name: 'gold-api', url: 'https://api.gold-api.com/price/' + (symbol === 'OANDA:XAUUSD' ? 'XAU' : 'XAG'),
-        pick: binancePrice });
-    }
-    var yt = yahooTicker(symbol);
-    if (yt) {
-      list.push({ name: 'Yahoo(프록시)',
-        url: 'https://r.jina.ai/https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(yt) + '?interval=1m&range=1d',
-        pick: jinaMeta });
-    }
-    return list;
-  }
-
-  function getPrice(symbol) {
-    var list = sourcesFor(symbol);
-    var i = 0;
-    function attempt() {
-      if (i >= list.length) return Promise.reject(new Error('모든 소스 실패'));
-      var s = list[i++];
-      return fetchWithTimeout(s.url, 9000).then(function (text) {
-        var j;
-        try { j = JSON.parse(text); } catch (e) { j = text; }
-        var v = s.pick(j);
-        if (!isFinite(v) || v <= 0) throw new Error('값 없음');
-        prices[symbol] = { v: v, t: new Date(), src: s.name, err: '' };
-        return prices[symbol];
-      }).catch(function () { return attempt(); });
-    }
-    return attempt().catch(function (e) {
-      var prev = prices[symbol];
-      prices[symbol] = { v: null, t: prev ? prev.t : null, src: '', err: '조회 실패(CORS/차단)' };
-      throw e;
-    });
-  }
-
-  /* ── 소리 / 시스템 알림 ───────────────────────── */
-  function unlockAudio() {
-    if (audioCtx) return;
-    try {
-      var AC = window.AudioContext || window.webkitAudioContext;
-      if (AC) audioCtx = new AC();
-    } catch (e) {}
-  }
-  document.addEventListener('pointerdown', unlockAudio, { once: true });
-  document.addEventListener('touchstart', unlockAudio, { once: true });
-
-  function beep() {
-    unlockAudio();
-    if (!audioCtx) return;
-    try {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      var t0 = audioCtx.currentTime;
-      [0, 0.18].forEach(function (off, i) {
-        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
-        o.type = 'sine';
-        o.frequency.value = i === 0 ? 880 : 1180;
-        g.gain.setValueAtTime(0.0001, t0 + off);
-        g.gain.exponentialRampToValueAtTime(0.35, t0 + off + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, t0 + off + 0.16);
-        o.connect(g); g.connect(audioCtx.destination);
-        o.start(t0 + off); o.stop(t0 + off + 0.18);
-      });
-    } catch (e) {}
-  }
-
-  function systemNotify(lines) {
-    try {
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('가격 알림 · 3분할 차트', { body: lines.join('\n'), tag: 'price-alert' });
-      }
-    } catch (e) {}
-  }
-
-  /* ── 배너 ────────────────────────────────────── */
-  function showBanner(lines, ms) {
-    var el = document.getElementById('banner');
-    document.getElementById('bannerText').innerHTML = lines.map(function (t) {
-      return '<div>' + t + '</div>';
-    }).join('');
-    el.classList.add('show');
-    if (bannerTimer) window.clearTimeout(bannerTimer);
-    bannerTimer = window.setTimeout(hideBanner, ms || 30000);
-  }
-  function hideBanner() {
-    document.getElementById('banner').classList.remove('show');
-    if (bannerTimer) { window.clearTimeout(bannerTimer); bannerTimer = null; }
-  }
-  document.getElementById('bannerClose').addEventListener('click', hideBanner);
-
-  /* ── 알림 평가 ────────────────────────────────── */
-  function evaluateAlerts() {
-    var hits = [];
-    liveAlerts().forEach(function (a) {
-      if (!a.on || a.firedAt) return;
-      var p = prices[a.symbol];
-      if (!p || p.v === null || p.v === undefined || !isFinite(p.v)) return;
-      var hit = a.dir === 'above' ? (p.v >= a.price) : (p.v <= a.price);
-      if (hit) {
-        a.firedAt = Date.now();
-        a.updated = Date.now();
-        hits.push({ a: a, cur: p.v, label: a.label });
-      }
-    });
-    if (!hits.length) return;
-    saveAlerts(); renderList(); renderCount();
-    ghPush();
-    var lines = hits.map(function (h) {
-      return '<b>' + esc(h.label) + '</b> ' + fmt(h.cur) +
-        ' — ' + (h.a.dir === 'above' ? '이상 ≥ ' : '이하 ≤ ') + '<em>' + fmt(h.a.price) + '</em> 도달';
-    });
-    showBanner(lines);
-    beep();
-    systemNotify(hits.map(function (h) {
-      return h.label + ' ' + fmt(h.cur) + ' (' + (h.a.dir === 'above' ? '≥' : '≤') + ' ' + fmt(h.a.price) + ')';
-    }));
-  }
-
-  var polling = false;
-  /* 이 탭에서 가격을 확인할 종목: 슬롯 3개 + 감시 중인 알림 종목 */
-  function watchSymbols() {
-    var out = [];
-    function add(s) { if (s && out.indexOf(s) < 0) out.push(s); }
-    slots.forEach(function (s) { add(s.symbol); });
-    liveAlerts().forEach(function (a) { if (a.on && !a.firedAt) add(a.symbol); });
-    return out.filter(hasLive).slice(0, 12);
-  }
-  function pollAll() {
-    if (polling) return Promise.resolve();
-    polling = true;
-    var syms = watchSymbols();
-    return Promise.all(syms.map(function (s) {
-      return getPrice(s).catch(function () {});
-    })).then(function () {
-      polling = false;
-      renderPrices();
-      evaluateAlerts();
-    });
-  }
-
-  /* ── 가격 알림 모달 ───────────────────────────── */
-  var modal = document.getElementById('modal');
-
-  function renderPrices() {
-    var row = document.getElementById('pxRow');
-    row.innerHTML = slots.map(function (s) {
-      var live = hasLive(s.symbol);
-      var p = live ? prices[s.symbol] : null;
-      var ok = p && p.v !== null && p.v !== undefined && isFinite(p.v);
-      var val, sub;
-      if (!live) {
-        val = '서버 감시'; sub = '이 탭 자동조회 없음';
-      } else if (ok) {
-        val = fmt(p.v); sub = fmtTime(p.t);
-      } else if (p && p.err) {
-        val = '조회 실패'; sub = 'CORS/차단';
-      } else {
-        val = '—'; sub = '대기';
-      }
-      return '<div class="px' + (live ? '' : ' nolive') + '"><b>' + esc(s.label) + '</b><span>' + val + '</span>' + sub + '</div>';
-    }).join('');
-    var note = document.getElementById('hint');
-    var failed = watchSymbols().filter(function (k) { return prices[k] && prices[k].err; });
-    if (failed.length) {
-      note.innerHTML = '10초마다 가격을 확인합니다. ' + failed.map(function (k) {
-        for (var i = 0; i < slots.length; i++) if (slots[i].symbol === k) return esc(slots[i].label);
-        return esc(k);
-      }).join('·') +
-        ' 가격은 브라우저 CORS 제한으로 자동 조회가 막힐 수 있어요 — 이때도 서버 24시간 감시(GitHub 동기화)는 계속 동작합니다.';
-    } else {
-      note.innerHTML = '10초마다 가격을 확인합니다. 목표가에 닿으면 배너·비프음·(허용 시) 알림으로 알려드려요.';
-    }
-  }
-
-  function renderCount() {
-    var list = liveAlerts();
-    document.getElementById('alertCount').textContent = String(list.length);
-    document.getElementById('alCount').textContent = list.length + ' / ' + MAX_ALERTS;
-    var live = list.filter(function (a) { return a.on && !a.firedAt; }).length;
-    document.getElementById('alertBtn').classList.toggle('hot', live > 0);
-  }
-
-  function renderList() {
-    var box = document.getElementById('lists');
-    var list = liveAlerts();
-    if (!list.length) {
-      box.innerHTML = '<div class="empty">등록된 알림이 없습니다. 위에서 종목·조건·목표가를 넣어 추가하세요.</div>';
-      return;
-    }
-    box.innerHTML = list.map(function (a) {
-      var live = hasLive(a.symbol);
-      var cls = 'al' + (a.firedAt ? ' fired' : '') + (a.on ? '' : ' off') + (live ? '' : ' unsup');
-      var info = a.firedAt ? '도달 ' + fmtTime(new Date(a.firedAt)) : (a.on ? (live ? '감시 중' : '서버 감시') : '꺼짐');
-      return '<div class="' + cls + '" data-id="' + a.id + '">' +
-        '<span class="who">' + esc(a.label) + '</span>' +
-        '<span class="cond">' + (a.dir === 'above' ? '≥ ' : '≤ ') + fmt(a.price) + '<i>' + info + '</i></span>' +
-        '<button class="tg' + (a.on ? ' on' : '') + '" type="button" data-act="toggle" aria-label="켜기/끄기">' +
-          (a.on ? 'ON' : 'OFF') + '</button>' +
-        '<button class="del" type="button" data-act="del" aria-label="삭제">✕</button>' +
-      '</div>';
-    }).join('');
-  }
-
-  /* 알림 폼의 종목 목록 = 현재 3개 슬롯 */
-  function paintFormSyms() {
-    var sel = document.getElementById('fSym');
-    var cur = sel.value;
-    sel.innerHTML = slots.map(function (s) {
-      return '<option value="' + s.id + '">' + esc(s.label) + (hasLive(s.symbol) ? '' : ' · 서버 감시 전용') + '</option>';
-    }).join('');
-    if (cur && sel.querySelector('option[value="' + cur + '"]')) sel.value = cur;
-    paintFormNote();
-  }
-
-  function paintFormNote() {
-    var sel = document.getElementById('fSym');
-    var i = slotIndex(sel.value);
-    var s = i >= 0 ? slots[i] : slots[0];
-    var live = !!(s && hasLive(s.symbol));
-    var note = document.getElementById('fSymNote');
-    var btn = document.getElementById('addBtn');
-    btn.disabled = false;                     /* 모든 종목에 알림을 걸 수 있다 */
-    note.classList.toggle('show', !live);
-    note.textContent = live ? '' : '이 종목은 이 탭에서 시세 자동조회가 안 되지만, 서버 24시간 감시로 알려드려요 (GitHub 동기화 필요)';
-  }
-
-  function renderModal() {
-    renderPrices(); renderList(); renderCount(); paintFormSyms(); paintGhPanel();
-    var st = document.getElementById('notifyState');
-    var btn = document.getElementById('notifyBtn');
-    if (!('Notification' in window)) {
-      st.textContent = '이 브라우저는 시스템 알림을 지원하지 않습니다. 배너·비프음은 동작합니다.';
-      btn.style.display = 'none';
-    } else if (Notification.permission === 'granted') {
-      st.textContent = '시스템 알림 허용됨';
-      btn.style.display = 'none';
-    } else if (Notification.permission === 'denied') {
-      st.textContent = '알림이 차단됨 — 브라우저 설정에서 허용해 주세요. 배너·비프음은 동작합니다.';
-      btn.style.display = 'none';
-    } else {
-      st.textContent = '탭을 닫으면 감시가 멈춥니다.';
-      btn.style.display = '';
-    }
-  }
-
-  /* ── GitHub 동기화 (alerts.json) ───────────────── */
-  function ghReady() {
-    return !!(gh.token && /^[\w.-]+\/[\w.-]+$/.test(gh.repo));
-  }
-
-  function loadGh() {
-    try {
-      var c = JSON.parse(localStorage.getItem(GH_STORE) || '{}');
-      if (c && typeof c === 'object') {
-        if (typeof c.repo === 'string' && /^[\w.-]+\/[\w.-]+$/.test(c.repo)) gh.repo = c.repo;
-        if (typeof c.token === 'string') gh.token = c.token;
-      }
-    } catch (e) {}
-  }
-  function saveGh() {
-    try { localStorage.setItem(GH_STORE, JSON.stringify({ repo: gh.repo, token: gh.token })); } catch (e) {}
-  }
-
-  function b64enc(str) {
-    var bytes = new TextEncoder().encode(str), bin = '';
-    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-    return btoa(bin);
-  }
-  function b64dec(b) {
-    var bin = atob(String(b || '').replace(/\s/g, ''));
-    var bytes = new Uint8Array(bin.length);
-    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return new TextDecoder().decode(bytes);
-  }
-
-  function setGhBadge(text, kind) {
-    gh.status = { k: kind || '', m: text };
-    paintGhBadge();
-  }
-  function paintGhBadge() {
-    var el = document.getElementById('ghBadge');
-    if (!el) return;
-    el.textContent = gh.status.m || '미설정';
-    el.className = 'ghbadge' + (gh.status.k ? ' ' + gh.status.k : '');
-    el.title = gh.status.m || '';
-  }
-  function paintGhPanel() {
-    var r = document.getElementById('ghRepo');
-    var t = document.getElementById('ghToken');
-    if (!r || !t) return;
-    if (document.activeElement !== r) r.value = gh.repo || '';
-    t.placeholder = gh.token ? '저장됨 — 새 토큰을 넣으면 교체' : 'github_pat_...';
-    t.value = '';
-    paintGhBadge();
-  }
-
-  function ghApiUrl() {
-    return 'https://api.github.com/repos/' + gh.repo + '/contents/' + GH_FILE;
-  }
-  function ghHeaders() {
-    var h = { 'Accept': 'application/vnd.github+json' };
-    if (gh.token) h['Authorization'] = 'Bearer ' + gh.token;
-    return h;
-  }
-  function ghErrorMessage(status, text) {
-    var msg = '';
-    try { msg = (JSON.parse(text) || {}).message || ''; } catch (e) {}
-    if (status === 401) return '토큰이 올바르지 않아요';
-    if (status === 403) return '토큰 권한 부족 (Contents: Read and write 필요)';
-    if (status === 404) return '저장소/파일 없음 — 저장소 이름·권한 확인';
-    if (status === 409 || status === 422) return '충돌 — 다시 시도해 주세요';
-    return 'GitHub 오류 ' + status + (msg ? ' · ' + msg : '');
-  }
-
-  function ghGet() {
-    var ctrl = ('AbortController' in window) ? new AbortController() : null;
-    var timer = ctrl ? window.setTimeout(function () { ctrl.abort(); }, 12000) : null;
-    return fetch(ghApiUrl() + '?_=' + Date.now(), { headers: ghHeaders(), cache: 'no-store', signal: ctrl ? ctrl.signal : undefined })
-      .then(function (r) {
-        if (r.status === 404) return { doc: null, sha: null };
-        if (!r.ok) return r.text().then(function (t) { throw new Error(ghErrorMessage(r.status, t)); });
-        return r.json().then(function (j) {
-          var doc = null;
-          try { doc = JSON.parse(b64dec(j.content)); } catch (e) { doc = null; }
-          if (!doc || !Array.isArray(doc.alerts)) doc = { alerts: [] };
-          return { doc: doc, sha: j.sha || null };
-        });
-      })
-      .then(function (out) { if (timer) window.clearTimeout(timer); return out; })
-      .catch(function (e) { if (timer) window.clearTimeout(timer); throw e; });
-  }
-
-  function ghPut(doc, sha) {
-    var body = {
-      message: 'alerts: ' + doc.alerts.length + '개 (' + new Date().toISOString() + ')',
-      content: b64enc(JSON.stringify(doc, null, 1))
-    };
-    if (sha) body.sha = sha;
-    var headers = ghHeaders();
-    headers['Content-Type'] = 'application/json';
-    return fetch(ghApiUrl(), { method: 'PUT', headers: headers, body: JSON.stringify(body) })
-      .then(function (r) {
-        if (!r.ok) return r.text().then(function (t) { throw new Error(ghErrorMessage(r.status, t)); });
-        return r.json();
-      });
-  }
-
-  /* 두 목록을 id 기준으로 합친다. 같은 id는 updated가 큰 쪽이 이긴다(삭제는 del 표시로 남겨 다른 기기에도 전달). */
-  function mergeAlerts(local, remote) {
-    var by = {};
-    function put(a) {
-      if (!a || typeof a.id !== 'string' || !a.id) return;
-      var prev = by[a.id];
-      if (!prev || (a.updated || 0) > (prev.updated || 0)) by[a.id] = a;
-    }
-    (local || []).forEach(put);
-    (remote || []).forEach(put);
-    var cutoff = Date.now() - 30 * 86400000;
-    return Object.keys(by).map(function (k) { return by[k]; })
-      .filter(function (a) { return !(a.del && (a.updated || 0) < cutoff); })
-      .sort(function (x, y) { return (x.updated || 0) - (y.updated || 0); })
-      .slice(-MAX_ALERTS);
-  }
-
-  function applyMerged(merged) {
-    var before = JSON.stringify(alerts);
-    alerts = merged;
-    if (JSON.stringify(merged) !== before) {
-      saveAlerts(); renderList(); renderCount(); pollAll();
-    } else {
-      renderList(); renderCount();
-    }
-  }
-
-  var ghPushTimer = null;
-  function ghPush() {
-    if (!ghReady()) { setGhBadge('미설정', ''); return; }
-    if (ghPushTimer) window.clearTimeout(ghPushTimer);
-    ghPushTimer = window.setTimeout(function () { ghPushTimer = null; doGhPush(); }, 700);
-  }
-
-  function doGhPush(retry) {
-    if (!ghReady()) return Promise.resolve();
-    if (gh.busy) { gh.again = true; return Promise.resolve(); }
-    gh.busy = true;
-    setGhBadge('동기화 중…', 'sync');
-    return ghGet().then(function (rem) {
-      applyMerged(mergeAlerts(alerts, rem.doc ? rem.doc.alerts : []));
-      var doc = { version: 1, updated_at: new Date().toISOString(), alerts: alerts };
-      return ghPut(doc, rem.sha);
-    }).then(function () {
-      gh.busy = false;
-      setGhBadge('동기화됨 · ' + fmtTime(new Date()), 'ok');
-    }).catch(function (e) {
-      gh.busy = false;
-      if (!retry && /충돌/.test(e.message || '')) return doGhPush(true);
-      setGhBadge(e.message || '동기화 실패', 'err');
-    }).then(function () {
-      if (!gh.busy && gh.again) { gh.again = false; doGhPush(); }
-    });
-  }
-
-  function ghPull() {
-    if (!ghReady()) { setGhBadge('미설정', ''); return Promise.resolve(); }
-    if (gh.busy) return Promise.resolve();
-    gh.busy = true;
-    setGhBadge('불러오는 중…', 'sync');
-    return ghGet().then(function (rem) {
-      applyMerged(mergeAlerts(alerts, rem.doc ? rem.doc.alerts : []));
-      if (rem.doc) setGhBadge('동기화됨 · ' + fmtTime(new Date()), 'ok');
-      else setGhBadge('원격 alerts.json 없음 — 추가하면 만들어져요', 'idle');
-    }).catch(function (e) {
-      setGhBadge(e.message || '불러오기 실패', 'err');
-    }).then(function () { gh.busy = false; });
-  }
-
-  document.getElementById('ghSaveBtn').addEventListener('click', function () {
-    var repo = (document.getElementById('ghRepo').value || '').trim();
-    var token = (document.getElementById('ghToken').value || '').trim();
-    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) {
-      setGhBadge('저장소는 owner/repo 형식이에요', 'err');
-      return;
-    }
-    gh.repo = repo;
-    if (token) gh.token = token;
-    saveGh(); paintGhPanel();
-    if (!gh.token) { setGhBadge('토큰을 넣어 주세요', 'err'); return; }
-    doGhPush();
-  });
-  document.getElementById('ghSyncBtn').addEventListener('click', function () { doGhPush(); });
-  document.getElementById('ghClearBtn').addEventListener('click', function () {
-    gh.token = ''; saveGh(); paintGhPanel();
-    setGhBadge('미설정 (기기에서 토큰 지움)', '');
-  });
-
-  function openModal(idx) {
-    if (typeof idx === 'number' && idx >= 0 && idx < slots.length) lastSlot = idx;
-    modal.classList.add('show');
-    document.body.classList.add('modalOpen');
-    renderModal();
-    var sel = document.getElementById('fSym');
-    if (sel && slots[lastSlot]) sel.value = slots[lastSlot].id;
-    paintFormNote();
-    pollAll();
-    if (ghReady()) ghPull();
-  }
-  function closeModal() {
-    modal.classList.remove('show');
-    document.body.classList.remove('modalOpen');
-  }
-
-  document.getElementById('alertBtn').addEventListener('click', function () { openModal(); });
-  document.getElementById('modalClose').addEventListener('click', closeModal);
-  modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
-  document.getElementById('fab').addEventListener('click', function () {
-    openModal(state.zoom >= 0 ? state.zoom : lastSlot);
-  });
-
-  document.getElementById('notifyBtn').addEventListener('click', function () {
-    if (!('Notification' in window)) return;
-    Notification.requestPermission().then(function () { renderModal(); });
-  });
-
-  document.getElementById('fSym').addEventListener('change', paintFormNote);
-
-  document.getElementById('addForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var slotId = document.getElementById('fSym').value;
-    var i = slotIndex(slotId);
-    if (i < 0) return;
-    lastSlot = i;
-    var dir = document.getElementById('fDir').value;
-    var raw = document.getElementById('fPrice').value.replace(/[^0-9.]/g, '');
-    var price = parseFloat(raw);
-    if (!isFinite(price) || price <= 0) {
-      document.getElementById('fPrice').focus();
-      return;
-    }
-    if (liveAlerts().length >= MAX_ALERTS) {
-      showBanner(['알림은 최대 ' + MAX_ALERTS + '개까지 등록할 수 있어요.']);
-      return;
-    }
-    alerts.push({
-      id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      symbol: slots[i].symbol, label: slots[i].label,
-      dir: dir, price: price, on: true, firedAt: null, updated: Date.now(), del: false
-    });
-    document.getElementById('fPrice').value = '';
-    saveAlerts(); renderList(); renderCount(); pollAll(); ghPush();
-    if (!ghReady() && hasLive(slots[i].symbol) === false) {
-      showBanner(['<b>' + esc(slots[i].label) + '</b>은(는) 서버 24시간 감시로 알림을 보내요. GitHub 동기화를 켜야 동작합니다.']);
-    }
-  });
-
-  document.getElementById('lists').addEventListener('click', function (e) {
-    var btn = e.target.closest ? e.target.closest('button[data-act]') : null;
-    if (!btn) return;
-    var row = btn.closest('.al');
-    var id = row && row.getAttribute('data-id');
-    var a = alerts.filter(function (x) { return x.id === id; })[0];
-    if (!a) return;
-    if (btn.getAttribute('data-act') === 'del') {
-      a.del = true; a.on = false;              /* 삭제 표시를 남겨 다른 기기/서버에도 전달 */
-    } else {
-      a.on = !a.on;
-      if (a.on) a.firedAt = null;      /* 재활성화 = 다시 감시 */
-    }
-    a.updated = Date.now();
-    saveAlerts(); renderList(); renderCount(); pollAll(); ghPush();
-  });
-
-  /* ── 종목 모달 ─────────────────────────────────── */
-  var symModal = document.getElementById('symModal');
-
-  function slotRowHTML(s, i, focusIdx) {
-    var custom = !isPreset(s.symbol);
-    var opts = PRESETS.map(function (g) {
-      return '<optgroup label="' + esc(g.g) + '">' + g.items.map(function (it) {
-        return '<option value="' + it[0] + '"' + (it[0] === s.symbol ? ' selected' : '') + '>' +
-          esc(it[1]) + ' · ' + it[0] + '</option>';
-      }).join('') + '</optgroup>';
-    }).join('');
-    opts += '<option value="__custom"' + (custom ? ' selected' : '') + '>직접 입력…</option>';
-    var live = hasLive(s.symbol);
-    return '<div class="slot' + (focusIdx === i ? ' on' : '') + '" data-i="' + i + '">' +
-      '<div class="srow">' +
-        '<span class="sn">' + (i + 1) + '</span>' +
-        '<select class="spick" data-i="' + i + '" aria-label="' + (i + 1) + '번 차트 종목">' + opts + '</select>' +
-        '<span class="sstate' + (live ? ' live' : '') + '">' + (live ? '실시간' : '차트 전용') + '</span>' +
-      '</div>' +
-      '<div class="custom' + (custom ? ' show' : '') + '">' +
-        '<input class="sinput" data-i="' + i + '" type="text" spellcheck="false" autocomplete="off" ' +
-          'placeholder="예: KRX:005930" aria-label="' + (i + 1) + '번 차트 TradingView 심볼" value="' +
-          esc(custom ? s.symbol : '') + '">' +
-        '<button class="sapply" data-i="' + i + '" type="button">적용</button>' +
-      '</div>' +
-      '<p class="serr" data-i="' + i + '"></p>' +
-    '</div>';
-  }
-
-  function renderSlotRows(focusIdx) {
-    var box = document.getElementById('slotRows');
-    box.innerHTML = slots.map(function (s, i) { return slotRowHTML(s, i, focusIdx); }).join('');
-  }
-
-  function slotRow(i) {
-    return document.querySelector('#slotRows .slot[data-i="' + i + '"]');
-  }
-
-  function setSlotError(i, msg) {
-    var p = document.querySelector('#slotRows .serr[data-i="' + i + '"]');
-    if (!p) return;
-    p.textContent = msg || '';
-    p.classList.toggle('show', !!msg);
-  }
-
-  function setSlot(i, symbol, opts) {
-    if (i < 0 || i >= slots.length) return false;
-    symbol = String(symbol || '').toUpperCase().trim();
-    if (!SYM_RE.test(symbol)) {
-      setSlotError(i, '거래소:심볼 형식으로 입력해 주세요. 예: KRX:005930, NASDAQ:AAPL, BINANCE:XRPUSDT');
-      return false;
-    }
-    setSlotError(i, '');
-    var changed = slots[i].symbol !== symbol;
-    slots[i].symbol = symbol;
-    slots[i].label = labelFor(symbol);
-    paintPanels();
-    saveLayout();
-    renderSlotRows(i);
-    if (changed) {
-      build(panels[i]);
-      pollAll();
-    }
-    if (modal.classList.contains('show')) renderModal();
-    return true;
-  }
-
-  function applyCustom(i) {
-    var inp = document.querySelector('#slotRows .sinput[data-i="' + i + '"]');
-    if (!inp) return;
-    var raw = inp.value.trim();
-    if (!raw) { setSlotError(i, '심볼을 입력해 주세요. 예: KRX:005930'); inp.focus(); return; }
-    var sym = raw.toUpperCase();
-    if (SYM_RE.test(sym)) { setSlot(i, sym, true); return; }
-    /* 거래소 없이 입력한 흔한 경우를 도와준다 */
-    if (/^[0-9]{6}$/.test(sym)) { setSlot(i, 'KRX:' + sym, true); return; }
-    if (/^[A-Z]{1,5}$/.test(sym)) { setSlotError(i, '거래소를 함께 적어 주세요. 예: NASDAQ:' + sym + ', KRX:' + sym); return; }
-    setSlotError(i, '거래소:심볼 형식으로 입력해 주세요. 예: KRX:005930, NASDAQ:AAPL');
-  }
-
-  function openSym(i) {
-    if (typeof i === 'number' && i >= 0) lastSlot = i;
-    renderSlotRows(typeof i === 'number' ? i : -1);
-    symModal.classList.add('show');
-    document.body.classList.add('modalOpen');
-    var row = typeof i === 'number' ? slotRow(i) : null;
-    if (row) {
-      var inp = row.querySelector('.sinput');
-      try { (inp && row.querySelector('.custom.show') ? inp : row.querySelector('.spick')).focus(); } catch (e) {}
-    }
-  }
-  function closeSym() { symModal.classList.remove('show'); document.body.classList.remove('modalOpen'); }
-
-  document.getElementById('symBtn').addEventListener('click', function () { openSym(-1); });
-  document.getElementById('symClose').addEventListener('click', closeSym);
-  document.getElementById('symDone').addEventListener('click', closeSym);
-  symModal.addEventListener('click', function (e) { if (e.target === symModal) closeSym(); });
-
-  panels.forEach(function (panel, i) {
-    panel.querySelector('.tag').addEventListener('click', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      openSym(i);
-    });
-  });
-
-  document.getElementById('slotRows').addEventListener('change', function (e) {
-    var sel = e.target;
-    if (!sel || !sel.classList || !sel.classList.contains('spick')) return;
-    var i = Number(sel.dataset.i);
-    if (sel.value === '__custom') {
-      var row = slotRow(i);
-      var box = row && row.querySelector('.custom');
-      if (box) box.classList.add('show');
-      var inp = row && row.querySelector('.sinput');
-      if (inp) { inp.value = slots[i].symbol; inp.focus(); inp.select(); }
-      return;
-    }
-    setSlot(i, sel.value);
-  });
-
-  document.getElementById('slotRows').addEventListener('click', function (e) {
-    var btn = e.target.closest ? e.target.closest('button.sapply') : null;
-    if (!btn) return;
-    applyCustom(Number(btn.dataset.i));
-  });
-
-  document.getElementById('slotRows').addEventListener('keydown', function (e) {
-    var inp = e.target;
-    if (!inp || !inp.classList || !inp.classList.contains('sinput')) return;
-    if (e.key === 'Enter') { e.preventDefault(); applyCustom(Number(inp.dataset.i)); }
-  });
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape') return;
-    if (symModal.classList.contains('show')) { closeSym(); return; }
-    if (modal.classList.contains('show')) closeModal();
-  });
-
-  document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) pollAll();
-  });
-
-  /* ── 화면 채우기 ──────────────────────────────── */
-  function paintPanels() {
-    panels.forEach(function (panel, i) {
-      var s = slots[i];
-      panel.dataset.symbol = s.symbol;
-      panel.dataset.label = s.label;
-      panel.setAttribute('aria-label', s.label + ' 차트');
-      var tag = panel.querySelector('.tag');
-      tag.textContent = s.label;
-      tag.setAttribute('aria-label', s.label + ' 종목 변경');
-      var name = String(s.symbol).split(':')[1] || s.label;
-      panel.querySelector('.cpr').innerHTML =
-        '<a href="https://www.tradingview.com/symbols/' + s.symbol.replace(':', '-') + '/" ' +
-        'target="_blank" rel="noopener nofollow">' + esc(name) + '</a>&nbsp;by TradingView';
-      panel.querySelector('.dz').setAttribute('aria-label',
-        s.label + ' 차트를 1화면으로 확대 (두 번 탭)');
-    });
-  }
-
-  /* ── 시작 ─────────────────────────────────────── */
-  loadGh();
-  load();
-  applyTheme();
-  paintIntervals();
-  paintToolsBtn();
-  paintPanels();
-  paintFormSyms();
-  syncZoom();
-  saveLayout();
-  renderCount();
-  renderList();
-  paintGhPanel();
-  buildAll(true);
-  pollAll();
-
-  /* 토큰이 있으면 다른 기기에서 만든 알림을 조용히 받아온다 */
-  if (ghReady()) window.setTimeout(function () { ghPull(); }, 1500);
-
-  /* 첫 방문에 한 번, 확대 방법을 알려 준다 */
-  window.setTimeout(function () {
-    var first = false;
-    try {
-      if (!localStorage.getItem(TIP_STORE)) { localStorage.setItem(TIP_STORE, '1'); first = true; }
-    } catch (e) {}
-    if (first) {
-      showBanner(['차트 위쪽 가장자리를 <b>두 번 탭</b>하면 그 차트만 <b>1화면</b>으로 커져요. 다시 두 번 탭하면 3분할로 돌아옵니다.'], 9000);
-    }
-  }, 1200);
-
-  var tick = 0;
-  window.setInterval(function () {
-    tick++;
-    var live = liveAlerts().some(function (a) { return a.on && !a.firedAt; });
-    var open = modal.classList.contains('show');
-    /* 감시 중인 알림이 있거나 모달을 보고 있으면 10초마다, 아니면 1분에 한 번만 확인 */
-    if (!live && !open && tick % 6 !== 0) return;
-    pollAll();
-  }, POLL_MS);
-})();
-</script>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

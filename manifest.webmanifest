@@ -1,7 +1,7 @@
 {
-  "name": "3분할 차트 — BTC · NASDAQ · GOLD",
-  "short_name": "3분할 차트",
-  "description": "BTC·NASDAQ·GOLD 3분할 캔들 차트, 1화면 확대, 가격 알림",
+  "name": "1~4분할 차트 — BTC · NASDAQ · GOLD · ETH",
+  "short_name": "분할 차트",
+  "description": "BTC·NASDAQ·GOLD·ETH 1~4분할 캔들 차트, RSI·매물대, 1화면 확대, 돌파 가격 알림",
   "lang": "ko",
   "dir": "ltr",
   "start_url": "./",
