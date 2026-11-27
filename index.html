@@ -76,6 +76,7 @@
   #symBtn .ic{font-size:9px;opacity:.65}
   #toolsBtn.on{border-color:#2b6cf0;color:#1b5fd0;background:var(--sel)}
   body.dark #toolsBtn.on{color:#dfe8ff;background:#25334a;border-color:#3d5680}
+  @media (max-width:390px){ #toolsBtn .t{display:none} #toolsBtn{padding:0 5px} }
   /* 1화면 확대 중에는 상단 바 자리를 확보하려고 종목 버튼을 숨긴다(좌상단 알약으로 대신) */
   body.zoomed #symBtn{display:none}
 
@@ -350,7 +351,7 @@
         <span class="ic" aria-hidden="true">▦</span>종목
       </button>
       <button id="toolsBtn" type="button" aria-label="작도 도구 패널" title="작도 도구 패널 (피보나치·채널·측정)">
-        <span aria-hidden="true">✏️</span>도구
+        <span aria-hidden="true">✏️</span><span class="t" aria-hidden="true">도구</span>
       </button>
       <button id="alertBtn" type="button" aria-label="가격 알림">
         <span aria-hidden="true">🔔</span><span class="n" id="alertCount">0</span>
