@@ -644,6 +644,7 @@
       full = full !== false;
       var sym = P.symbol;
       if (binancePair(sym)) loadBinance(P, full);
+      else if (sym === 'OANDA:XAUUSD') loadPaxg(P, full);
       else if (yahooTicker(sym)) loadYahoo(P, full);
       else {
         clearPanel(P);
@@ -723,6 +724,36 @@
         } else {
           setStatus(P, 'Yahoo 지연 · 이전 값', true);
         }
+      });
+    }
+
+    /* 금·은: 바이낸스 PAXG/PAXG는 현물 금을 따라가는 실시간 캔들. 막히면 Yahoo 선물 */
+    function loadPaxg(P, full) {
+      var pair = 'PAXGUSDT';
+      var gen = ++P.gen;
+      var urls = [
+        'https://data-api.binance.vision/api/v3/klines?symbol=' + pair + '&interval=' + BN_IV[state.interval] + '&limit=' + (full ? 300 : 5),
+        'https://api.binance.com/api/v3/klines?symbol=' + pair + '&interval=' + BN_IV[state.interval] + '&limit=' + (full ? 300 : 5)
+      ];
+      if (full) { P.status = 'loading'; showMsg(P, null, '금 캔들을 불러오는 중…'); }
+      var i = 0;
+      function attempt() {
+        if (i >= urls.length) return Promise.reject(new Error('프록시 실패'));
+        return fetchText(urls[i++], 12000).then(function (t) { return JSON.parse(t); }).catch(attempt);
+      }
+      attempt().then(function (arr) {
+        if (gen !== P.gen) return;
+        var bars = arr.map(function (k) {
+          return { time: Math.floor(k[0] / 1000), open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5] };
+        });
+        setStatus(P, '금 현물(PAXG) · Binance ' + fmtHM(new Date()));
+        P.err = '';
+        if (full || !P.bars.length) setBars(P, bars, true);
+        else mergeBars(P, bars);
+      }).catch(function () {
+        if (gen !== P.gen) return;
+        if (!P.bars.length) loadYahoo(P, full);
+        else setStatus(P, '금 시세 지연 · 이전 값', true);
       });
     }
 
@@ -1775,11 +1806,11 @@
         list.push({ name: 'Binance.com', url: 'https://api.binance.com/api/v3/ticker/price?symbol=' + bp, pick: function (j) { return Number(j.price); } });
       }
       if (symbol === 'OANDA:XAUUSD' || symbol === 'OANDA:XAGUSD') {
-        /* 금·은은 현물 시세(gold-api)를 먼저, 막히면 Yahoo 선물 */
+        /* 금은 차트와 같은 소스(PAXG 현물)를 먼저 쓴다. 그러면 태그·목표가·차트가 모두 같은 값 */
+        list.push({ name: 'Binance PAXG', url: 'https://data-api.binance.vision/api/v3/ticker/price?symbol=PAXGUSDT', pick: function (j) { return Number(j.price); } });
         list.push({ name: 'gold-api', url: 'https://api.gold-api.com/price/' + (symbol === 'OANDA:XAUUSD' ? 'XAU' : 'XAG'), pick: function (j) { return Number(j.price); } });
         var gurl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(symbol === 'OANDA:XAUUSD' ? 'GC=F' : 'SI=F') + '?interval=1m&range=1d';
-        list.push({ name: 'Yahoo', url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent(gurl), pick: function (t) { return jinaMeta(t); } });
-        list.push({ name: 'Yahoo(프록시)', url: 'https://r.jina.ai/' + gurl, pick: jinaMeta });
+        list.push({ name: 'Yahoo', url: 'https://r.jina.ai/' + gurl, pick: jinaMeta });
       }
       var yt = yahooTicker(symbol);
       if (yt) {
@@ -1795,8 +1826,7 @@
     var priceAt = {};
     function getPrice(symbol, force) {
       var now = Date.now();
-      var gap = binancePair(symbol) ? 6000 : (symbol === 'OANDA:XAUUSD' || symbol === 'OANDA:XAGUSD' ? 8000 : 30000);
-      if (!force && priceAt[symbol] && (now - priceAt[symbol] < gap) && prices[symbol]) return Promise.resolve(prices[symbol]);
+      var gap = binancePair(symbol) ? 6000 : (symbol === 'OANDA:XAUUSD' || symbol === 'OANDA:XAGUSD' ? 8000 : 30000);      if (!force && priceAt[symbol] && (now - priceAt[symbol] < gap) && prices[symbol]) return Promise.resolve(prices[symbol]);
       priceAt[symbol] = now;
       var list = sourcesFor(symbol);
       var i = 0;
@@ -2433,6 +2463,7 @@
       panels.forEach(function (P) {
         if (P.status === 'error' && !P.bars.length) return;
         if (binancePair(P.symbol)) loadBinance(P, false);
+        else if (P.symbol === 'OANDA:XAUUSD') loadPaxg(P, false);
       });
       if (Date.now() - lastYahoo > 60000) {
         lastYahoo = Date.now();
